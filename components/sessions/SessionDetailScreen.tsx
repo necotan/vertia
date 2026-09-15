@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useToast } from "@/components/ui/Toast";
 import { db, type DriveSession, type SessionSummary } from "@/lib/db/schema";
 import { deleteSession, getSessionGpsPoints } from "@/lib/db/sessionRepository";
 import { exportSessionFile, isTransferSupported } from "@/lib/db/sessionTransfer";
@@ -81,6 +82,7 @@ export function SessionDetailScreen() {
   const tCommon = useTranslations("common");
   const format = useFormatter();
   const router = useRouter();
+  const toast = useToast();
   const id = useSearchParams().get("id") ?? "";
   // 読み込み中は undefined、見つからないときは null
   const session = useLiveQuery<DriveSession | null>(async () => (await db.sessions.get(id)) ?? null, [id]);
@@ -88,14 +90,10 @@ export function SessionDetailScreen() {
   const points = useLiveQuery(() => getSessionGpsPoints(id), [id]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [deleteFailed, setDeleteFailed] = useState(false);
-
   const [exporting, setExporting] = useState(false);
-  const [exportFailed, setExportFailed] = useState(false);
 
   const handleExport = async () => {
     setExporting(true);
-    setExportFailed(false);
     try {
       const { blob, filename } = await exportSessionFile(id);
       const url = URL.createObjectURL(blob);
@@ -107,7 +105,7 @@ export function SessionDetailScreen() {
       link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 10_000);
     } catch {
-      setExportFailed(true);
+      toast.error(t("detail.export.failed"));
     } finally {
       setExporting(false);
     }
@@ -115,14 +113,13 @@ export function SessionDetailScreen() {
 
   const handleDelete = async () => {
     setDeleting(true);
-    setDeleteFailed(false);
     try {
       await deleteSession(id);
       router.replace("/sessions");
     } catch {
       setDeleting(false);
       setConfirmOpen(false);
-      setDeleteFailed(true);
+      toast.error(t("detail.delete.failed"));
     }
   };
 
@@ -159,20 +156,10 @@ export function SessionDetailScreen() {
 
       {session && (
         <div className="flex flex-col gap-2">
-          {exportFailed && (
-            <p role="alert" className="text-sm text-red-600 dark:text-red-400">
-              {t("detail.export.failed")}
-            </p>
-          )}
           {isTransferSupported() && (
             <Button variant="primary" onClick={() => void handleExport()} disabled={exporting || deleting}>
               {exporting ? t("detail.export.exporting") : t("detail.export.button")}
             </Button>
-          )}
-          {deleteFailed && (
-            <p role="alert" className="text-sm text-red-600 dark:text-red-400">
-              {t("detail.delete.failed")}
-            </p>
           )}
           <Button variant="danger" onClick={() => setConfirmOpen(true)} disabled={deleting}>
             {t("detail.delete.button")}
