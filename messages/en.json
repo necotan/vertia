@@ -1,0 +1,126 @@
+{
+  "common": {
+    "appName": "Vertia",
+    "back": "Back",
+    "cancel": "Cancel"
+  },
+  "nav": {
+    "label": "Main navigation",
+    "home": "Home",
+    "sessions": "Sessions",
+    "settings": "Settings"
+  },
+  "sessions": {
+    "title": "Sessions",
+    "empty": "No sessions yet",
+    "import": {
+      "button": "Import",
+      "importing": "Importing…",
+      "errors": {
+        "unsupported": "This browser does not support importing files",
+        "invalid": "This file could not be read as a Vertia session",
+        "duplicate": "This session has already been imported",
+        "failed": "Could not import the session"
+      }
+    },
+    "card": {
+      "distance": "Distance",
+      "duration": "Duration",
+      "maxSpeed": "Top speed"
+    },
+    "detail": {
+      "notFound": "Session not found",
+      "noSummary": "No summary yet because this session is still recording",
+      "sections": {
+        "overview": "Overview",
+        "speed": "Speed",
+        "gForce": "G-force"
+      },
+      "distance": "Distance",
+      "duration": "Duration",
+      "avgSpeed": "Average",
+      "medianSpeed": "Median",
+      "maxSpeed": "Top",
+      "maxG": "Peak",
+      "maxLateralG": "Peak lateral",
+      "maxLongitudinalG": "Peak longitudinal",
+      "map": {
+        "title": "Route",
+        "noPoints": "No location data was recorded",
+        "gestureMobile": "Use two fingers to move the map",
+        "gestureWindows": "Use Ctrl + scroll to zoom the map",
+        "gestureMac": "Use ⌘ + scroll to zoom the map"
+      },
+      "speedChart": {
+        "title": "Speed over time",
+        "empty": "No speed data was recorded",
+        "speed": "Speed"
+      },
+      "export": {
+        "button": "Export",
+        "exporting": "Exporting…",
+        "failed": "Could not export the session"
+      },
+      "delete": {
+        "button": "Delete session",
+        "confirmTitle": "Delete this session?",
+        "confirmMessage": "All GPS and motion data will also be deleted. This cannot be undone.",
+        "confirm": "Delete",
+        "failed": "Could not delete the session"
+      }
+    }
+  },
+  "home": {
+    "title": "Home",
+    "startDrive": "Start driving",
+    "unsupported": "Driving features are not available on this device (no location or motion sensor support)",
+    "recent": {
+      "title": "Recent sessions",
+      "empty": "No sessions yet"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "theme": "Theme",
+    "themeOptions": {
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    }
+  },
+  "languageOptions": {
+    "ja": "日本語",
+    "en": "English"
+  },
+  "drive": {
+    "start": "Start measuring",
+    "startHint": "While stopped, mount the screen facing you",
+    "calibrating": "Calibrating G-sensor…",
+    "recalibrate": "Recalibrate",
+    "recordStart": "Start recording",
+    "recordStop": "Stop recording",
+    "saving": "Saving…",
+    "canvas": {
+      "speedUnit": "km/h",
+      "avg": "AVG",
+      "median": "MED",
+      "max": "MAX",
+      "gpsAccuracy": "GPS ±",
+      "gpsWaiting": "Acquiring GPS",
+      "gUnit": "G"
+    },
+    "wakeLock": {
+      "failed": "Could not keep the screen awake",
+      "unsupported": "Keeping the screen awake is not supported on this device"
+    },
+    "errors": {
+      "unsupported": "Driving features are not available on this device",
+      "motionDenied": "Motion sensor access was denied. Please allow it in settings",
+      "motionUnavailable": "Could not read motion sensor data",
+      "geolocationDenied": "Location access was denied. Please allow it in settings",
+      "geolocationUnavailable": "Could not get your location",
+      "saveFailed": "Failed to save the session"
+    }
+  }
+}

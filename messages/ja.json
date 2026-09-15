@@ -1,0 +1,126 @@
+{
+  "common": {
+    "appName": "Vertia",
+    "back": "戻る",
+    "cancel": "キャンセル"
+  },
+  "nav": {
+    "label": "メインナビゲーション",
+    "home": "ホーム",
+    "sessions": "記録",
+    "settings": "設定"
+  },
+  "sessions": {
+    "title": "記録",
+    "empty": "まだ記録がありません",
+    "import": {
+      "button": "インポート",
+      "importing": "取り込み中…",
+      "errors": {
+        "unsupported": "このブラウザはファイルの取り込みに対応していません",
+        "invalid": "Vertia の記録ファイルとして読み込めませんでした",
+        "duplicate": "この記録はすでに取り込まれています",
+        "failed": "記録を取り込めませんでした"
+      }
+    },
+    "card": {
+      "distance": "距離",
+      "duration": "時間",
+      "maxSpeed": "最高速度"
+    },
+    "detail": {
+      "notFound": "記録が見つかりません",
+      "noSummary": "記録中のため、まだ集計がありません",
+      "sections": {
+        "overview": "概要",
+        "speed": "速度",
+        "gForce": "加速度（G）"
+      },
+      "distance": "距離",
+      "duration": "時間",
+      "avgSpeed": "平均",
+      "medianSpeed": "中央値",
+      "maxSpeed": "最高",
+      "maxG": "最大",
+      "maxLateralG": "横方向の最大",
+      "maxLongitudinalG": "前後方向の最大",
+      "map": {
+        "title": "走行ルート",
+        "noPoints": "位置情報の記録がありません",
+        "gestureMobile": "地図は2本指で動かせます",
+        "gestureWindows": "Ctrl + スクロールで地図を拡大・縮小できます",
+        "gestureMac": "⌘ + スクロールで地図を拡大・縮小できます"
+      },
+      "speedChart": {
+        "title": "速度の推移",
+        "empty": "速度の記録がありません",
+        "speed": "速度"
+      },
+      "export": {
+        "button": "エクスポート",
+        "exporting": "書き出し中…",
+        "failed": "記録を書き出せませんでした"
+      },
+      "delete": {
+        "button": "記録を削除",
+        "confirmTitle": "この記録を削除しますか？",
+        "confirmMessage": "GPSと加速度のデータもすべて削除されます。この操作は取り消せません。",
+        "confirm": "削除",
+        "failed": "記録を削除できませんでした"
+      }
+    }
+  },
+  "home": {
+    "title": "ホーム",
+    "startDrive": "走行を開始",
+    "unsupported": "この端末では走行中機能を利用できません（位置情報またはモーションセンサーに非対応）",
+    "recent": {
+      "title": "最近の記録",
+      "empty": "まだ記録がありません"
+    }
+  },
+  "settings": {
+    "title": "設定",
+    "language": "言語",
+    "theme": "テーマ",
+    "themeOptions": {
+      "system": "システム",
+      "light": "ライト",
+      "dark": "ダーク"
+    }
+  },
+  "languageOptions": {
+    "ja": "日本語",
+    "en": "English"
+  },
+  "drive": {
+    "start": "測定を開始",
+    "startHint": "停車中に画面を運転者へ向けて固定してください",
+    "calibrating": "センサーを校正中",
+    "recalibrate": "再校正",
+    "recordStart": "記録開始",
+    "recordStop": "記録終了",
+    "saving": "保存中…",
+    "canvas": {
+      "speedUnit": "km/h",
+      "avg": "平均",
+      "median": "中央値",
+      "max": "最高",
+      "gpsAccuracy": "GPS誤差",
+      "gpsWaiting": "GPS測位中",
+      "gUnit": "G"
+    },
+    "wakeLock": {
+      "failed": "画面のスリープ防止を有効にできませんでした",
+      "unsupported": "この端末は画面のスリープ防止に非対応です"
+    },
+    "errors": {
+      "unsupported": "この端末では走行中機能を利用できません",
+      "motionDenied": "モーションセンサーへのアクセスが許可されませんでした。設定から許可してください",
+      "motionUnavailable": "モーションセンサーの値を取得できませんでした",
+      "geolocationDenied": "位置情報へのアクセスが許可されませんでした。設定から許可してください",
+      "geolocationUnavailable": "位置情報を取得できませんでした",
+      "saveFailed": "記録の保存に失敗しました"
+    }
+  }
+}
