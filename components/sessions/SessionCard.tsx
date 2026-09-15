@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { DriveSession } from "@/lib/db/schema";
 import { formatDuration } from "@/lib/format";
 import { mpsToKmh } from "@/lib/geo";
+import { sessionDetailHref } from "@/lib/routes";
 
 export function SessionCard({ session }: { session: DriveSession }) {
   const t = useTranslations("sessions.card");
@@ -12,7 +13,7 @@ export function SessionCard({ session }: { session: DriveSession }) {
 
   return (
     <Link
-      href={`/sessions/${session.id}`}
+      href={sessionDetailHref(session.id)}
       className="block rounded-2xl border border-border bg-card p-4 transition-colors hover:bg-muted"
     >
       <span className="text-sm font-medium">

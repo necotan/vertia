@@ -47,6 +47,7 @@
       "map": {
         "title": "Route",
         "noPoints": "No location data was recorded",
+        "offline": "The map is unavailable while offline",
         "gestureMobile": "Use two fingers to move the map",
         "gestureWindows": "Use Ctrl + scroll to zoom the map",
         "gestureMac": "Use ⌘ + scroll to zoom the map"
