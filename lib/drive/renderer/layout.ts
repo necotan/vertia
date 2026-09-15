@@ -17,7 +17,7 @@ const clamp = (value: number, min: number, max: number) => Math.min(max, Math.ma
 
 const G_METER_SIZE_RATIO = 0.85;
 
-export const TOP_BAR_Y = 8;
+export const TOP_BAR_Y = 40;
 export const TOP_BAR_H = 44;
 
 export const HINT_AREA_H = 60;
