@@ -6,6 +6,7 @@ import { useTheme } from "next-themes";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/Toast";
 import { recoverInterruptedSessions } from "@/lib/db/sessionRepository";
 import { DriveController, initialDriveUiState, type DriveUiState } from "@/lib/drive/DriveController";
 import { DriveRenderer } from "@/lib/drive/renderer/DriveRenderer";
@@ -14,6 +15,7 @@ import { setDrivePalette, type DriveLabels, type Rect } from "@/lib/drive/render
 export function DriveScreen() {
   const t = useTranslations("drive");
   const tCommon = useTranslations("common");
+  const toast = useToast();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const controllerRef = useRef<DriveController | null>(null);
   const rendererRef = useRef<DriveRenderer | null>(null);
@@ -70,12 +72,17 @@ export function DriveScreen() {
   const busy = phase === "starting" || phase === "saving";
   const canLeave = phase !== "recording" && phase !== "saving";
 
+  useEffect(() => {
+    if (error) toast.error(t(`errors.${error}`));
+  }, [error, t, toast]);
+
+  useEffect(() => {
+    if (wakeLock === "failed" || wakeLock === "unsupported") toast.info(t(`wakeLock.${wakeLock}`));
+  }, [wakeLock, t, toast]);
+
   let message: string | null = null;
-  if (error) message = t(`errors.${error}`);
-  else if (phase === "idle") message = t("startHint");
+  if (phase === "idle") message = t("startHint");
   else if (phase === "calibrating") message = t("calibrating");
-  else if (wakeLock === "failed") message = t("wakeLock.failed");
-  else if (wakeLock === "unsupported") message = t("wakeLock.unsupported");
 
   return (
     <div className="fixed inset-0 flex flex-col bg-white text-foreground dark:bg-black [padding:env(safe-area-inset-top)_env(safe-area-inset-right)_env(safe-area-inset-bottom)_env(safe-area-inset-left)]">
@@ -94,9 +101,9 @@ export function DriveScreen() {
 
         {message && hintRect !== null && (
           <p
-            role={error ? "alert" : "status"}
+            role="status"
             style={{ left: 0, right: 0, bottom: 0, height: hintRect.h }}
-            className={`absolute flex items-center justify-center px-4 text-center text-sm ${error ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}`}
+            className="absolute flex items-center justify-center px-4 text-center text-sm text-muted-foreground"
           >
             {message}
           </p>
