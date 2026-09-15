@@ -13,6 +13,8 @@
   --primary-foreground: #fafafa;
   --secondary: #f5f5f5;
   --secondary-foreground: #171717;
+  --skeleton: #f0f0f0;
+  --skeleton-shimmer: rgb(255 255 255 / 0.65);
 }
 
 .dark {
@@ -26,6 +28,8 @@
   --primary-foreground: #171717;
   --secondary: #262626;
   --secondary-foreground: #fafafa;
+  --skeleton: #262626;
+  --skeleton-shimmer: rgb(255 255 255 / 0.08);
 }
 
 @theme inline {
@@ -58,6 +62,25 @@
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--skeleton);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--skeleton-shimmer), transparent);
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 .dark:has(.drive-screen) body {
