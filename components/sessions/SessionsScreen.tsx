@@ -10,8 +10,11 @@ import { useToast } from "@/components/ui/Toast";
 import { db, type DriveSession } from "@/lib/db/schema";
 import { recoverInterruptedSessions } from "@/lib/db/sessionRepository";
 import { importSessionFile } from "@/lib/db/sessionTransfer";
+import { useDeferredLoading } from "@/lib/hooks/useDeferredLoading";
 import { sessionDetailHref } from "@/lib/routes";
-import { SessionCard } from "./SessionCard";
+import { SessionCard, SessionCardSkeleton } from "./SessionCard";
+
+const SKELETON_COUNT = 5;
 
 export function SessionsScreen() {
   const t = useTranslations("sessions");
@@ -20,6 +23,7 @@ export function SessionsScreen() {
   const sessions = useLiveQuery<DriveSession[]>(() => db.sessions.orderBy("startedAt").reverse().toArray(), []);
   const inputRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
+  const showSkeleton = useDeferredLoading(sessions === undefined);
 
   useEffect(() => {
     void recoverInterruptedSessions();
@@ -58,14 +62,24 @@ export function SessionsScreen() {
         />
       </div>
 
-      {sessions && sessions.length === 0 && (
+      {showSkeleton && (
+        <ul className="flex flex-col gap-2" aria-busy="true">
+          {[...Array(SKELETON_COUNT)].map((_, i) => (
+            <li key={i}>
+              <SessionCardSkeleton />
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {!showSkeleton && sessions && sessions.length === 0 && (
         <div className="flex flex-1 flex-col items-center justify-center gap-3 text-muted-foreground">
           <FileText className="size-10" strokeWidth={1.5} />
           <p className="text-sm">{t("empty")}</p>
         </div>
       )}
 
-      {sessions && sessions.length > 0 && (
+      {!showSkeleton && sessions && sessions.length > 0 && (
         <ul className="flex flex-col gap-2">
           {sessions.map((session) => (
             <li key={session.id}>
