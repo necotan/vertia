@@ -1,15 +1,17 @@
 "use client";
 
 import "maplibre-gl/dist/maplibre-gl.css";
+import { Map as MapIcon } from "lucide-react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
-import { useEffect, useMemo, useRef, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { GpsPoint } from "@/lib/db/schema";
 import { GPS_ACCURACY_LIMIT_M } from "@/lib/drive/liveStats";
 
 const WORKER_URL = "/maplibre/maplibre-gl-worker.mjs";
 const ATTRIBUTION_COLLAPSE_MS = 5000;
+const PLACEHOLDER_FADE_MS = 300;
 
 const STYLE_URLS = {
   light: "https://tiles.openfreemap.org/styles/positron",
@@ -22,6 +24,8 @@ const ROUTE_COLORS = {
 } as const;
 
 type Coordinate = [number, number];
+// loading: プレースホルダで地図を覆う, fading: プレースホルダをフェードアウト中, shown: 地図のみ
+type Phase = "loading" | "fading" | "shown";
 
 function subscribeOnline(onChange: () => void): () => void {
   window.addEventListener("online", onChange);
@@ -38,6 +42,8 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
   const containerRef = useRef<HTMLDivElement>(null);
   // 地図のタイルは保存しないため、オフラインのときは地図の代わりにメッセージを出す
   const online = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
+  // 地図のスタイルとタイルの読み込みが終わるまでは、帰属表示ボタンごとプレースホルダで覆う
+  const [phase, setPhase] = useState<Phase>("loading");
 
   const coordinates = useMemo<Coordinate[]>(
     () => points.filter((p) => p.accuracy <= GPS_ACCURACY_LIMIT_M).map((p) => [p.lng, p.lat]),
@@ -64,10 +70,12 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
     let cancelled = false;
     let collapseTimer: ReturnType<typeof setTimeout> | undefined;
 
-    void import("maplibre-gl").then(({ Map, LngLatBounds, setWorkerUrl }) => {
+    void import("maplibre-gl").then(({ Map, LngLatBounds, setWorkerUrl, prewarm }) => {
       if (cancelled) return;
       // Worker の URL は相対パスだと Worker 側で解決できないため、絶対 URL にして渡す
       setWorkerUrl(new URL(WORKER_URL, window.location.href).href);
+      // Worker を地図インスタンス間で使い回し、2回目以降の生成を最適化する
+      prewarm();
       const bounds = coordinates.reduce(
         (acc, coordinate) => acc.extend(coordinate),
         new LngLatBounds(coordinates[0], coordinates[0]),
@@ -92,6 +100,7 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
         if (!loadedMap.hasImage(id)) loadedMap.addImage(id, { width: 1, height: 1, data: new Uint8Array(4) });
       });
       loadedMap.on("load", () => {
+        setPhase("fading");
         collapseTimer = setTimeout(() => {
           container
             .querySelector(".maplibregl-ctrl-attrib.maplibregl-compact-show")
@@ -149,8 +158,15 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
       cancelled = true;
       clearTimeout(collapseTimer);
       map?.remove();
+      setPhase("loading");
     };
   }, [coordinates, theme, locale, online]);
+
+  useEffect(() => {
+    if (phase !== "fading") return;
+    const timer = setTimeout(() => setPhase("shown"), PLACEHOLDER_FADE_MS);
+    return () => clearTimeout(timer);
+  }, [phase]);
 
   return (
     <section className="flex flex-col gap-3">
@@ -165,8 +181,20 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
             {t("offline")}
           </p>
         ) : (
-          // MapLibre の CSS が地図の要素に position: relative を指定するため、absolute での配置に頼らず親の大きさに合わせる
-          <div ref={containerRef} className="size-full" />
+          <>
+            {/* MapLibre の CSS が地図の要素に position: relative を指定するため、absolute での配置に頼らず親の大きさに合わせる */}
+            <div ref={containerRef} className="size-full" />
+            {phase !== "shown" && (
+              <div
+                aria-hidden
+                className={`skeleton pointer-events-none absolute inset-0 z-10 flex items-center justify-center transition-opacity ${phase === "fading" ? "opacity-0" : ""}`}
+                style={{ transitionDuration: `${PLACEHOLDER_FADE_MS}ms` }}
+              >
+                {/* シマーの ::after より手前に出すために relative にする */}
+                <MapIcon className="relative size-10 text-muted-foreground" />
+              </div>
+            )}
+          </>
         )}
       </div>
     </section>
