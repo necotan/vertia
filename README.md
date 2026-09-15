@@ -26,13 +26,21 @@
 
 走行画面を使用できるかは、画面幅ではなくセンサー API の有無で判定します。GPS とモーションセンサーを備えた PC なら走行画面も開けますが、多くの PC はこれらのセンサーを持たないため、インポートした記録の閲覧用となります。
 
+## 使い方
+
 ### ホーム画面に追加
 スマートフォンではホーム画面に追加すると、アドレスバーなどのブラウザUIが消え、ネイティブアプリのように使用できます。
 
 - **iOS（Safari）**: 共有ボタンから「ホーム画面に追加」
 - **Android（Chrome）**: メニューから「ホーム画面に追加」
 
-## ローカル起動方法
+### 位置情報の設定
+走行画面では位置情報を使用します。速度や GPS 誤差が正しく表示されない場合は、次の設定を確認してください。
+
+- **iOS**: 「設定」から「プライバシーとセキュリティ」から「位置情報サービス」から「Safari Webサイト」で、「正確な位置情報」をオンにする
+- **Android**: Chrome の位置情報の権限で、「正確な位置情報を使用」をオンにする
+
+## 開発
 サーバーやデータベースは不要で、Next.js の開発サーバーで動作します。
 
 ### 前提条件
@@ -73,15 +81,6 @@
 | `npm run copy:maplibre-worker` | MapLibre の Worker を `public/maplibre/` にコピーする |
 | `npm run generate:icons` | `assets/vertia-icon.png` からファビコン・Apple 用・PWA 用のアイコンを生成する |
 
-### MapLibre の Worker について
-Turbopack は MapLibre GL JS v6 の Worker の URL を解決できません。そこで Worker と共有チャンクを `public/maplibre/` にコピーして配信し、`setWorkerUrl` でその URL を渡しています。`public/maplibre/` は `.gitignore` に入っています。
-
-### アイコンの更新
-`assets/vertia-icon.png` を差し替えて `npm run generate:icons` を実行すると、次のファイルを白背景付きで生成し直します。
-
-- `app/favicon.ico`、`app/icon.png`、`app/apple-icon.png`
-- `public/icons/icon-192.png`、`icon-512.png`、`icon-maskable-512.png`
-
 ### ディレクトリ構成
 
 ```
@@ -107,6 +106,15 @@ messages/             翻訳（ja.json / en.json）
 scripts/              アイコン生成、MapLibre の Worker のコピー
 public/               Service Worker、PWA 用アイコン
 ```
+
+### MapLibre の Worker について
+Turbopack は MapLibre GL JS v6 の Worker の URL を解決できません。そこで Worker と共有チャンクを `public/maplibre/` にコピーして配信し、`setWorkerUrl` でその URL を渡しています。`public/maplibre/` は `.gitignore` に入っています。
+
+### アイコンの更新
+`assets/vertia-icon.png` を差し替えて `npm run generate:icons` を実行すると、次のファイルを白背景付きで生成し直します。
+
+- `app/favicon.ico`、`app/icon.png`、`app/apple-icon.png`
+- `public/icons/icon-192.png`、`icon-512.png`、`icon-maskable-512.png`
 
 ## 技術スタック・クレジット (Tech Stack & Credits)
 このプロジェクトは以下の技術およびオープンソースライブラリを使用しています。
@@ -146,5 +154,5 @@ iOS Safari を優先対応し、Android Chrome を対応としていますが、
 **7. 外部環境の変化**
 使用している技術スタック（Next.js, MapLibre GL JS, OpenFreeMap 等）のアップデートや仕様変更、ブラウザのセンサー API の変更により、予告なく一部機能が使えなくなる可能性があります。開発者はこれらに対する恒久的なメンテナンスやアップデートの義務を負いません。
 
-**8. ライセンス**
+## ライセンス
 本プロジェクトのソースコードは [MIT License](LICENSE) の下で公開されています。商用・非商用を問わず、ライセンス条項の範囲内で自由にご利用いただけます。
