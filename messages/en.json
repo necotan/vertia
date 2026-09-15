@@ -74,7 +74,6 @@
   "home": {
     "title": "Home",
     "startDrive": "Start driving",
-    "unsupported": "Driving features are not available on this device (no location or motion sensor support)",
     "recent": {
       "title": "Recent sessions",
       "empty": "No sessions yet"
