@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
 
+// Service Worker の登録 URL に付けるバージョン
+const serviceWorkerVersion =
+  process.env.VERCEL_DEPLOYMENT_ID ?? process.env.VERCEL_GIT_COMMIT_SHA ?? String(Date.now());
+
 const nextConfig: NextConfig = {
+  env: {
+    SERVICE_WORKER_VERSION: serviceWorkerVersion,
+  },
   async headers() {
     return [
       {

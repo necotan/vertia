@@ -47,6 +47,7 @@
       "map": {
         "title": "走行ルート",
         "noPoints": "位置情報の記録がありません",
+        "offline": "オフラインのため地図を表示できません",
         "gestureMobile": "地図は2本指で動かせます",
         "gestureWindows": "Ctrl + スクロールで地図を拡大・縮小できます",
         "gestureMac": "⌘ + スクロールで地図を拡大・縮小できます"

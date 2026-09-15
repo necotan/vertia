@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { db, type DriveSession } from "@/lib/db/schema";
 import { recoverInterruptedSessions } from "@/lib/db/sessionRepository";
 import { importSessionFile, type ImportResult } from "@/lib/db/sessionTransfer";
+import { sessionDetailHref } from "@/lib/routes";
 import { SessionCard } from "./SessionCard";
 
 type ImportFailure = Extract<ImportResult, { ok: false }>["reason"];
@@ -30,7 +31,7 @@ export function SessionsScreen() {
     setImportError(null);
     const result = await importSessionFile(file);
     setImporting(false);
-    if (result.ok) router.push(`/sessions/${result.sessionId}`);
+    if (result.ok) router.push(sessionDetailHref(result.sessionId));
     else setImportError(result.reason);
   };
 

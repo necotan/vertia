@@ -5,7 +5,8 @@ import { useEffect } from "react";
 export function ServiceWorkerRegister() {
   useEffect(() => {
     if (process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) return;
-    navigator.serviceWorker.register("/sw.js", { scope: "/", updateViaCache: "none" }).catch(() => undefined);
+    const scriptUrl = `/sw.js?v=${encodeURIComponent(process.env.SERVICE_WORKER_VERSION ?? "")}`;
+    navigator.serviceWorker.register(scriptUrl, { scope: "/", updateViaCache: "none" }).catch(() => undefined);
   }, []);
 
   return null;

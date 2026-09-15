@@ -4,7 +4,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { ChevronLeft } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -81,7 +81,7 @@ export function SessionDetailScreen() {
   const tCommon = useTranslations("common");
   const format = useFormatter();
   const router = useRouter();
-  const { id } = useParams<{ id: string }>();
+  const id = useSearchParams().get("id") ?? "";
   // 読み込み中は undefined、見つからないときは null
   const session = useLiveQuery<DriveSession | null>(async () => (await db.sessions.get(id)) ?? null, [id]);
   // 地図と速度グラフで使用する GPS 点
