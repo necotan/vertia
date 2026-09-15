@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/Toast";
 import { recoverInterruptedSessions } from "@/lib/db/sessionRepository";
 import { DriveController, initialDriveUiState, type DriveUiState } from "@/lib/drive/DriveController";
 import { DriveRenderer } from "@/lib/drive/renderer/DriveRenderer";
+import { TOP_BAR_Y } from "@/lib/drive/renderer/layout";
 import { setDrivePalette, type DriveLabels, type Rect } from "@/lib/drive/renderer/types";
 
 export function DriveScreen() {
@@ -85,7 +86,7 @@ export function DriveScreen() {
   else if (phase === "calibrating") message = t("calibrating");
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-white text-foreground dark:bg-black [padding:env(safe-area-inset-top)_env(safe-area-inset-right)_env(safe-area-inset-bottom)_env(safe-area-inset-left)]">
+    <div className="drive-screen fixed inset-0 flex flex-col bg-white text-foreground dark:bg-black [padding:env(safe-area-inset-top)_env(safe-area-inset-right)_env(safe-area-inset-bottom)_env(safe-area-inset-left)]">
       <div className="relative min-h-0 flex-1">
         <canvas ref={canvasRef} className="absolute inset-0 block size-full touch-none" />
 
@@ -93,7 +94,8 @@ export function DriveScreen() {
           <Link
             href="/"
             aria-label={tCommon("back")}
-            className="absolute left-2 top-2 flex size-11 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
+            style={{ top: TOP_BAR_Y }}
+            className="absolute left-2 flex size-11 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
           >
             <ChevronLeft className="size-6" />
           </Link>

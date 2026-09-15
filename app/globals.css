@@ -60,6 +60,10 @@ body {
   color: var(--foreground);
 }
 
+.dark:has(.drive-screen) body {
+  background: #000000;
+}
+
 /* MapLibre の出典表示をダーク配色にする（Tailwind の指定は MapLibre の CSS に負けるためレイヤー外に書く） */
 .dark .maplibregl-ctrl-attrib.maplibregl-compact {
   background-color: var(--card);
