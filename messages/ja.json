@@ -12,7 +12,11 @@
   },
   "sessions": {
     "title": "記録",
-    "empty": "まだ記録がありません",
+    "empty": {
+      "title": "まだ記録がありません",
+      "description": "走行を記録すると、ここに表示されます。\n別の端末の記録はインポートで取り込めます。",
+      "action": "走行を開始"
+    },
     "import": {
       "button": "インポート",
       "importing": "取り込み中…",
@@ -75,8 +79,7 @@
     "title": "ホーム",
     "startDrive": "走行を開始",
     "recent": {
-      "title": "最近の記録",
-      "empty": "まだ記録がありません"
+      "title": "最近の記録"
     }
   },
   "settings": {

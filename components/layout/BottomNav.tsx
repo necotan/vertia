@@ -25,14 +25,20 @@ function matchesHref(pathname: string, href: string): boolean {
 export function BottomNav() {
   const pathname = usePathname();
   const t = useTranslations("nav");
-  // タップした項目を遷移完了前にアクティブ表示する先取り状態（タップ時の pathname を持ち、遷移後に pathname が変わると無効になる）
-  const [pending, setPending] = useState<{ href: string; fromPathname: string } | null>(null);
-  const pendingHref = pending !== null && pending.fromPathname === pathname ? pending.href : null;
+  // タップした項目を遷移完了前にアクティブ表示する先取り状態
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const [lastPathname, setLastPathname] = useState(pathname);
+
+  // 遷移が終わったら先取り状態を消す（残したままだと、あとで同じ画面に戻ったときに古い項目がアクティブになる）
+  if (lastPathname !== pathname) {
+    setLastPathname(pathname);
+    setPendingHref(null);
+  }
 
   // 遷移が完了しないまま先取り表示が残り続けないようにする
   useEffect(() => {
     if (pendingHref === null) return;
-    const timer = setTimeout(() => setPending(null), PENDING_TIMEOUT_MS);
+    const timer = setTimeout(() => setPendingHref(null), PENDING_TIMEOUT_MS);
     return () => clearTimeout(timer);
   }, [pendingHref]);
 
@@ -55,7 +61,7 @@ export function BottomNav() {
               href={item.href}
               aria-current={matchesHref(pathname, item.href) ? "page" : undefined}
               onClick={() => {
-                if (!matchesHref(pathname, item.href)) setPending({ href: item.href, fromPathname: pathname });
+                if (!matchesHref(pathname, item.href)) setPendingHref(item.href);
               }}
               className={`flex h-full w-full flex-col items-center justify-center gap-1 transition-colors ${
                 isActive

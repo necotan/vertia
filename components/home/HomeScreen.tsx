@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useEffect } from "react";
 import { SessionCard, SessionCardSkeleton } from "@/components/sessions/SessionCard";
+import { SessionsEmptyState } from "@/components/sessions/SessionsEmptyState";
 import { db, type DriveSession } from "@/lib/db/schema";
 import { recoverInterruptedSessions } from "@/lib/db/sessionRepository";
 import { useDeferredLoading } from "@/lib/hooks/useDeferredLoading";
@@ -37,30 +38,31 @@ export function HomeScreen() {
         {t("startDrive")}
       </Link>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold text-muted-foreground">{t("recent.title")}</h2>
-        {showSkeleton && (
-          <ul className="flex flex-col gap-2" aria-busy="true">
-            {[...Array(SKELETON_COUNT)].map((_, i) => (
-              <li key={i}>
-                <SessionCardSkeleton />
-              </li>
-            ))}
-          </ul>
-        )}
-        {!showSkeleton && sessions && sessions.length === 0 && (
-          <p className="text-sm text-muted-foreground">{t("recent.empty")}</p>
-        )}
-        {!showSkeleton && sessions && sessions.length > 0 && (
-          <ul className="flex flex-col gap-2">
-            {sessions.map((session) => (
-              <li key={session.id}>
-                <SessionCard session={session} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      {!showSkeleton && sessions && sessions.length === 0 ? (
+        <SessionsEmptyState showAction={false} />
+      ) : (
+        <section className="flex flex-col gap-3">
+          <h2 className="text-sm font-semibold text-muted-foreground">{t("recent.title")}</h2>
+          {showSkeleton && (
+            <ul className="flex flex-col gap-2" aria-busy="true">
+              {[...Array(SKELETON_COUNT)].map((_, i) => (
+                <li key={i}>
+                  <SessionCardSkeleton />
+                </li>
+              ))}
+            </ul>
+          )}
+          {!showSkeleton && sessions && sessions.length > 0 && (
+            <ul className="flex flex-col gap-2">
+              {sessions.map((session) => (
+                <li key={session.id}>
+                  <SessionCard session={session} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
     </main>
   );
 }

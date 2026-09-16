@@ -12,7 +12,11 @@
   },
   "sessions": {
     "title": "Sessions",
-    "empty": "No sessions yet",
+    "empty": {
+      "title": "No sessions yet",
+      "description": "Sessions you record will appear here. You can also import sessions exported from another device.",
+      "action": "Start driving"
+    },
     "import": {
       "button": "Import",
       "importing": "Importing…",
@@ -75,8 +79,7 @@
     "title": "Home",
     "startDrive": "Start driving",
     "recent": {
-      "title": "Recent sessions",
-      "empty": "No sessions yet"
+      "title": "Recent sessions"
     }
   },
   "settings": {
