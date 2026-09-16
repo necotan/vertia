@@ -1,7 +1,6 @@
 "use client";
 
 import { useLiveQuery } from "dexie-react-hooks";
-import { FileText } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -13,6 +12,7 @@ import { importSessionFile } from "@/lib/db/sessionTransfer";
 import { useDeferredLoading } from "@/lib/hooks/useDeferredLoading";
 import { sessionDetailHref } from "@/lib/routes";
 import { SessionCard, SessionCardSkeleton } from "./SessionCard";
+import { SessionsEmptyState } from "./SessionsEmptyState";
 
 const SKELETON_COUNT = 5;
 
@@ -72,12 +72,7 @@ export function SessionsScreen() {
         </ul>
       )}
 
-      {!showSkeleton && sessions && sessions.length === 0 && (
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 text-muted-foreground">
-          <FileText className="size-10" strokeWidth={1.5} />
-          <p className="text-sm">{t("empty")}</p>
-        </div>
-      )}
+      {!showSkeleton && sessions && sessions.length === 0 && <SessionsEmptyState />}
 
       {!showSkeleton && sessions && sessions.length > 0 && (
         <ul className="flex flex-col gap-2">
