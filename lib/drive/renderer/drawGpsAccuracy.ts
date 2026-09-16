@@ -22,13 +22,14 @@ export function drawGpsAccuracy(ctx: CanvasRenderingContext2D, rect: Rect, frame
 
   // 等幅フォントではスペースも数字1文字分の幅になり数字と単位が離れるため、単位は別に描いて間隔を詰める
   const unit = "m";
-  ctx.fillStyle = COLORS.text;
+  ctx.fillStyle = COLORS.subText;
   ctx.font = `${size}px ${LABEL_FONT}`;
   ctx.fillText(unit, right, cy);
   const unitWidth = ctx.measureText(unit).width;
 
   const value = String(Math.round(frame.gpsAccuracyM));
   const valueRight = right - unitWidth - size * 0.2;
+  ctx.fillStyle = COLORS.text;
   ctx.font = `600 ${size}px ${NUMBER_FONT}`;
   ctx.fillText(value, valueRight, cy);
   const valueWidth = ctx.measureText(value).width;
