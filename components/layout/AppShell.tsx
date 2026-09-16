@@ -14,8 +14,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     scrollRef.current?.scrollTo(0, 0);
   }, [pathname]);
 
+  // ホーム画面アプリの iOS は dvh をステータスバー分短く返すため、画面全体の高さになる lvh を使用する
   return (
-    <div className="relative h-dvh overflow-hidden">
+    <div className="relative h-dvh overflow-hidden standalone:h-lvh">
       <ToastProvider>
         <div ref={scrollRef} className="h-full overflow-y-auto overscroll-y-contain">
           {/* 内容が少なくてもスクロールとバウンドが効くよう、枠より 1px 高くする */}
