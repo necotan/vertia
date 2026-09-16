@@ -155,7 +155,7 @@ export function SessionDetailScreen() {
       {session?.summary && <SummarySections summary={session.summary} />}
 
       {session && (
-        <div className="flex flex-col gap-2">
+        <div className="mt-8 flex flex-col gap-4">
           {isTransferSupported() && (
             <Button variant="primary" onClick={() => void handleExport()} disabled={exporting || deleting}>
               {exporting ? t("detail.export.exporting") : t("detail.export.button")}
