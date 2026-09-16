@@ -55,7 +55,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {/* iOS のステータスバーは直下のコンテンツの色を取り込むため、セーフエリアから 40px 以上離す */}
       <div
         aria-live="polite"
-        className="pointer-events-none fixed left-1/2 top-[calc(env(safe-area-inset-top)+40px)] z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 flex-col gap-2"
+        className="pointer-events-none absolute left-1/2 top-[calc(env(safe-area-inset-top)+40px)] z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 flex-col gap-2"
       >
         {toasts.map((toast) => (
           <button

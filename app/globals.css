@@ -64,11 +64,11 @@ body {
   color: var(--foreground);
 }
 
-/* 起動直後の 1px スクロールで表示領域を再計算させるため、内容が短い画面でもスクロールできるようにする */
-@media (display-mode: standalone) {
-  body {
-    min-height: calc(100% + 1px);
-  }
+/* スクロールとバウンドは AppShell の中の領域だけで起こし、画面全体が動いてナビがずれないようにする */
+html,
+body {
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 /* Tailwind のユーティリティ（absolute など）で上書きできるように components レイヤーに置く */

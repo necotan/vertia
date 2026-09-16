@@ -86,7 +86,7 @@ export function DriveScreen() {
   else if (phase === "calibrating") message = t("calibrating");
 
   return (
-    <div className="drive-screen fixed inset-0 flex flex-col bg-white text-foreground dark:bg-black [padding:env(safe-area-inset-top)_env(safe-area-inset-right)_env(safe-area-inset-bottom)_env(safe-area-inset-left)]">
+    <div className="drive-screen absolute inset-0 flex flex-col bg-white text-foreground dark:bg-black [padding:env(safe-area-inset-top)_env(safe-area-inset-right)_env(safe-area-inset-bottom)_env(safe-area-inset-left)]">
       <div className="relative min-h-0 flex-1">
         <canvas ref={canvasRef} className="absolute inset-0 block size-full touch-none" />
 

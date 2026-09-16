@@ -2,22 +2,16 @@
 
 import { ThemeProvider } from "next-themes";
 import type { ReactNode } from "react";
-import { BottomNav } from "@/components/layout/BottomNav";
+import { AppShell } from "@/components/layout/AppShell";
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
-import { StandaloneViewportFix } from "@/components/pwa/StandaloneViewportFix";
-import { ToastProvider } from "@/components/ui/Toast";
 import { I18nProvider } from "@/lib/i18n/I18nProvider";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <ServiceWorkerRegister />
-      <StandaloneViewportFix />
       <I18nProvider>
-        <ToastProvider>
-          {children}
-          <BottomNav />
-        </ToastProvider>
+        <AppShell>{children}</AppShell>
       </I18nProvider>
     </ThemeProvider>
   );
