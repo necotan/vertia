@@ -18,7 +18,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="relative h-dvh overflow-hidden standalone:h-lvh">
       <ToastProvider>
-        <div ref={scrollRef} className="h-full overflow-y-auto overscroll-y-contain">
+        {/* overflow-y だけを指定すると横も auto になり、グラフのツールチップ等が一瞬はみ出したときに横へ動かせてしまうため、横は明示的に止める */}
+        <div ref={scrollRef} className="h-full overflow-x-hidden overflow-y-auto overscroll-y-contain">
           {/* 内容が少なくてもスクロールとバウンドが効くよう、枠より 1px 高くする */}
           <div className="min-h-[calc(100%+1px)]">{children}</div>
         </div>
