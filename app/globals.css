@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
+@custom-variant standalone (@media (display-mode: standalone));
 
 :root {
   --background: #ffffff;
