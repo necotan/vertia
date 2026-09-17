@@ -1,9 +1,10 @@
 "use client";
 
 import "maplibre-gl/dist/maplibre-gl.css";
-import { Layers, Map as MapIcon, Maximize2, Minimize2 } from "lucide-react";
+import { Gauge, Layers, Map as MapIcon, Maximize2, Minimize2 } from "lucide-react";
 import type {
   FitBoundsOptions,
+  GeoJSONSource,
   LngLatBounds,
   Map as MapLibreMap,
   TransformStyleFunction,
@@ -15,7 +16,11 @@ import { BottomSheet } from "@/components/ui/BottomSheet";
 import type { GpsPoint } from "@/lib/db/schema";
 import { GPS_ACCURACY_LIMIT_M } from "@/lib/drive/liveStats";
 import { MAP_STYLES, type MapStyleId, saveMapStyle, themeMapStyle, useSavedMapStyle } from "@/lib/mapStyles";
+import { saveRouteSpeedColors, useRouteSpeedColors } from "@/lib/routeColorMode";
+import { buildSpeedSegments, type SpeedSegments } from "@/lib/routeSpeed";
+import { useDistanceUnit } from "@/lib/units";
 import { MapStylePicker } from "./MapStylePicker";
+import { RouteSpeedLegend } from "./RouteSpeedLegend";
 
 const WORKER_URL = "/maplibre/maplibre-gl-worker.mjs";
 const ATTRIBUTION_COLLAPSE_MS = 5000;
@@ -34,7 +39,7 @@ function getFitBoundsOptions(fullscreen: boolean, button: HTMLElement | null, pi
   // 実際の位置から上の余白を決める
   const top = button ? button.offsetTop + button.offsetHeight + 16 : 96;
   return {
-    padding: fullscreen ? { top, bottom: 64, left: 48, right: 48 } : 40,
+    padding: fullscreen ? { top, bottom: 64, left: 48, right: 48 } : { top: 72, bottom: 40, left: 40, right: 40 },
     maxZoom: 16,
     pitch,
     bearing: 0,
@@ -44,16 +49,29 @@ function getFitBoundsOptions(fullscreen: boolean, button: HTMLElement | null, pi
 type Coordinate = [number, number];
 type StyleSpecification = Parameters<TransformStyleFunction>[1];
 type RouteStyle = Pick<StyleSpecification, "sources" | "layers">;
+type Visibility = "visible" | "none";
+
+type RouteData = {
+  coordinates: Coordinate[];
+  speedSegments: SpeedSegments;
+  speedColors: boolean;
+};
+
+function routeVisibility(speedColors: boolean): { line: Visibility; speed: Visibility } {
+  return speedColors ? { line: "none", speed: "visible" } : { line: "visible", speed: "none" };
+}
 
 // ルートと始点・終点を描くためのソースとレイヤー
-function buildRouteStyle(coordinates: Coordinate[], darkStyle: boolean): RouteStyle {
+function buildRouteStyle({ coordinates, speedSegments, speedColors }: RouteData, darkStyle: boolean): RouteStyle {
   const colors = ROUTE_COLORS[darkStyle ? "dark" : "light"];
+  const visibility = routeVisibility(speedColors);
   return {
     sources: {
       route: {
         type: "geojson",
         data: { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates } },
       },
+      "route-speed": { type: "geojson", data: speedSegments },
       endpoints: {
         type: "geojson",
         data: {
@@ -81,8 +99,15 @@ function buildRouteStyle(coordinates: Coordinate[], darkStyle: boolean): RouteSt
         id: "route-line",
         type: "line",
         source: "route",
-        layout: { "line-join": "round", "line-cap": "round" },
+        layout: { "line-join": "round", "line-cap": "round", visibility: visibility.line },
         paint: { "line-color": colors.line, "line-width": 4 },
+      },
+      {
+        id: "route-speed-line",
+        type: "line",
+        source: "route-speed",
+        layout: { "line-join": "round", "line-cap": "round", visibility: visibility.speed },
+        paint: { "line-color": ["get", "color"], "line-width": 4 },
       },
       {
         id: "endpoints",
@@ -132,6 +157,8 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
   const [fullscreen, setFullscreen] = useState(false);
   const [styleSheetOpen, setStyleSheetOpen] = useState(false);
   const savedStyle = useSavedMapStyle();
+  const speedColors = useRouteSpeedColors();
+  const unit = useDistanceUnit();
   const mapRef = useRef<MapLibreMap | null>(null);
   const boundsRef = useRef<LngLatBounds | null>(null);
   const fullscreenButtonRef = useRef<HTMLButtonElement>(null);
@@ -142,6 +169,18 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
   const coordinates = useMemo<Coordinate[]>(
     () => points.filter((p) => p.accuracy <= GPS_ACCURACY_LIMIT_M).map((p) => [p.lng, p.lat]),
     [points],
+  );
+  const speedSegments = useMemo(() => buildSpeedSegments(points, unit), [points, unit]);
+  // 地図を作り直さずに切り替えるため、ルートの描画ではその時点の値を参照する
+  const speedSegmentsRef = useRef(speedSegments);
+  const speedColorsRef = useRef(speedColors);
+  const getRouteStyle = useCallback(
+    (darkStyle: boolean) =>
+      buildRouteStyle(
+        { coordinates, speedSegments: speedSegmentsRef.current, speedColors: speedColorsRef.current },
+        darkStyle,
+      ),
+    [coordinates],
   );
 
   const locale = useMemo<Record<string, string>>(
@@ -223,7 +262,7 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
 
         // 読み込み前にスタイルを切り替えた場合は、切り替え時にルートを追加済み
         if (loadedMap.getSource("route")) return;
-        const route = buildRouteStyle(coordinates, style.dark);
+        const route = getRouteStyle(style.dark);
         for (const [id, source] of Object.entries(route.sources)) loadedMap.addSource(id, source);
         for (const layer of route.layers) loadedMap.addLayer(layer);
       });
@@ -238,7 +277,20 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
       map?.remove();
       setPhase("loading");
     };
-  }, [coordinates, theme, locale, online]);
+  }, [coordinates, theme, locale, online, getRouteStyle]);
+
+  useEffect(() => {
+    speedSegmentsRef.current = speedSegments;
+    speedColorsRef.current = speedColors;
+    const map = mapRef.current;
+    if (!map) return;
+    // 読み込み前やスタイルの切り替え中は、ルートを追加するときに最新の値が反映される
+    void map.getSource<GeoJSONSource>("route-speed")?.setData(speedSegments);
+    if (!map.getLayer("route-line") || !map.getLayer("route-speed-line")) return;
+    const visibility = routeVisibility(speedColors);
+    map.setLayoutProperty("route-line", "visibility", visibility.line);
+    map.setLayoutProperty("route-speed-line", "visibility", visibility.speed);
+  }, [speedSegments, speedColors]);
 
   useEffect(() => {
     isFullscreenRef.current = isFullscreen;
@@ -256,14 +308,16 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
 
     // 3D は Liberty を傾けて表示するだけなので、同じ URL のときは読み込み直さない
     if (MAP_STYLES[previousStyle].url !== style.url) {
-      const route = buildRouteStyle(coordinates, style.dark);
       // 新しいスタイルにルートを加えてから反映し、切り替え中にルートが消えないようにする
       map.setStyle(style.url, {
-        transformStyle: (_previous, next) => ({
-          ...next,
-          sources: { ...next.sources, ...route.sources },
-          layers: [...next.layers, ...route.layers],
-        }),
+        transformStyle: (_previous, next) => {
+          const route = getRouteStyle(style.dark);
+          return {
+            ...next,
+            sources: { ...next.sources, ...route.sources },
+            layers: [...next.layers, ...route.layers],
+          };
+        },
       });
     }
     if (fullscreenChanged) {
@@ -281,7 +335,7 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
     } else if (MAP_STYLES[previousStyle].pitch !== style.pitch) {
       map.easeTo({ pitch: style.pitch, bearing: 0 });
     }
-  }, [isFullscreen, activeStyle, coordinates]);
+  }, [isFullscreen, activeStyle, getRouteStyle]);
 
   // Safari は画面上部のぼかしをページの背景色で色づけるため、全画面の間は地図の背景色に合わせる
   const fullscreenBackground =
@@ -411,6 +465,37 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
               >
                 {isFullscreen ? <Minimize2 className="size-5" /> : <Maximize2 className="size-5" />}
               </button>
+            )}
+            {phase === "shown" && (
+              <>
+                <button
+                  type="button"
+                  aria-label={t("speedColors.toggle")}
+                  aria-pressed={speedColors}
+                  onClick={() => saveRouteSpeedColors(!speedColors)}
+                  className={`absolute z-20 flex size-10 items-center justify-center rounded-full border backdrop-blur-md transition-colors ${
+                    speedColors
+                      ?
+                        "border-background bg-foreground/90 text-background hover:bg-foreground/80"
+                      : "border-border bg-background/90 text-foreground hover:bg-muted"
+                  } ${
+                    isFullscreen
+                      ? "right-[calc(env(safe-area-inset-right)+20px)] top-[calc(env(safe-area-inset-top)+144px)]"
+                      : "right-3 top-[3.75rem]"
+                  }`}
+                >
+                  <Gauge className="size-5" />
+                </button>
+                {speedColors && (
+                  <RouteSpeedLegend
+                    className={`absolute z-20 ${
+                      isFullscreen
+                        ? "left-[calc(env(safe-area-inset-left)+20px)] top-[calc(env(safe-area-inset-top)+40px)]"
+                        : "left-3 top-3"
+                    }`}
+                  />
+                )}
+              </>
             )}
             {isFullscreen && phase === "shown" && activeStyle !== undefined && (
               <>
