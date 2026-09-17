@@ -54,7 +54,9 @@
         "offline": "オフラインのため地図を表示できません",
         "gestureMobile": "地図は2本指で動かせます",
         "gestureWindows": "Ctrl + スクロールで地図を拡大・縮小できます",
-        "gestureMac": "⌘ + スクロールで地図を拡大・縮小できます"
+        "gestureMac": "⌘ + スクロールで地図を拡大・縮小できます",
+        "enterFullscreen": "地図を全画面で表示",
+        "exitFullscreen": "全画面表示を閉じる"
       },
       "speedChart": {
         "title": "速度の推移",

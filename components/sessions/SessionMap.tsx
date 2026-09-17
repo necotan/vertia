@@ -1,11 +1,11 @@
 "use client";
 
 import "maplibre-gl/dist/maplibre-gl.css";
-import { Map as MapIcon } from "lucide-react";
-import type { Map as MapLibreMap } from "maplibre-gl";
+import { Map as MapIcon, Maximize2, Minimize2 } from "lucide-react";
+import type { FitBoundsOptions, LngLatBounds, Map as MapLibreMap } from "maplibre-gl";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { GpsPoint } from "@/lib/db/schema";
 import { GPS_ACCURACY_LIMIT_M } from "@/lib/drive/liveStats";
 
@@ -22,6 +22,18 @@ const ROUTE_COLORS = {
   light: { line: "#171717", casing: "#ffffff" },
   dark: { line: "#fafafa", casing: "#0a0a0a" },
 } as const;
+
+// 全画面表示を開いたときに積む履歴のエントリのキー
+const FULLSCREEN_HISTORY_KEY = "vertiaSessionMapFullscreen";
+
+function getFitBoundsOptions(fullscreen: boolean, button: HTMLElement | null): FitBoundsOptions {
+  // 実際の位置から上の余白を決める
+  const top = button ? button.offsetTop + button.offsetHeight + 16 : 96;
+  return {
+    padding: fullscreen ? { top, bottom: 64, left: 48, right: 48 } : 40,
+    maxZoom: 16,
+  };
+}
 
 type Coordinate = [number, number];
 // loading: プレースホルダで地図を覆う, fading: プレースホルダをフェードアウト中, shown: 地図のみ
@@ -44,6 +56,12 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
   const online = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
   // 地図のスタイルとタイルの読み込みが終わるまでは、帰属表示ボタンごとプレースホルダで覆う
   const [phase, setPhase] = useState<Phase>("loading");
+  const [fullscreen, setFullscreen] = useState(false);
+  const mapRef = useRef<MapLibreMap | null>(null);
+  const boundsRef = useRef<LngLatBounds | null>(null);
+  const fullscreenButtonRef = useRef<HTMLButtonElement>(null);
+  // 全画面を開いたときに積んだ履歴のエントリが、まだ残っているか
+  const historyEntryRef = useRef(false);
 
   const coordinates = useMemo<Coordinate[]>(
     () => points.filter((p) => p.accuracy <= GPS_ACCURACY_LIMIT_M).map((p) => [p.lng, p.lat]),
@@ -61,6 +79,11 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
 
   // next-themes はマウント前に undefined を返すため、テーマが決まってから地図を描画する
   const theme = resolvedTheme === undefined ? undefined : resolvedTheme === "dark" ? "dark" : "light";
+
+  // 地図を出せない状態になったら全画面も解除する
+  const isFullscreen = fullscreen && coordinates.length > 0 && online;
+  // テーマ切り替え等で地図を作り直すときに、全画面かどうかを引き継ぐ
+  const isFullscreenRef = useRef(isFullscreen);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -81,13 +104,15 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
         new LngLatBounds(coordinates[0], coordinates[0]),
       );
       const colors = ROUTE_COLORS[theme];
+      const fullscreenAtCreate = isFullscreenRef.current;
 
       map = new Map({
         container,
         style: STYLE_URLS[theme],
         bounds,
-        fitBoundsOptions: { padding: 40, maxZoom: 16 },
-        cooperativeGestures: true,
+        fitBoundsOptions: getFitBoundsOptions(fullscreenAtCreate, fullscreenButtonRef.current),
+        // 全画面では1本指で地図を動かせるようにする
+        cooperativeGestures: !fullscreenAtCreate,
         dragRotate: false,
         touchPitch: false,
         attributionControl: { compact: true },
@@ -95,6 +120,8 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
       });
 
       const loadedMap = map;
+      mapRef.current = loadedMap;
+      boundsRef.current = bounds;
       // OpenFreeMap の dark スタイルは sprite にない模様（wood-pattern）を参照していて警告が出るため、見つからない画像は透明な 1px の画像で埋める
       loadedMap.setMissingStyleImageResolver((id) => {
         if (!loadedMap.hasImage(id)) loadedMap.addImage(id, { width: 1, height: 1, data: new Uint8Array(4) });
@@ -157,10 +184,54 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
     return () => {
       cancelled = true;
       clearTimeout(collapseTimer);
+      mapRef.current = null;
+      boundsRef.current = null;
       map?.remove();
       setPhase("loading");
     };
   }, [coordinates, theme, locale, online]);
+
+  useEffect(() => {
+    isFullscreenRef.current = isFullscreen;
+    const map = mapRef.current;
+    const bounds = boundsRef.current;
+    if (!map || !bounds) return;
+    if (isFullscreen) map.cooperativeGestures.disable();
+    else map.cooperativeGestures.enable();
+    // 枠の大きさが変わった直後に合わせ直し、ルート全体が見える位置に戻す
+    map.resize();
+    map.fitBounds(bounds, { ...getFitBoundsOptions(isFullscreen, fullscreenButtonRef.current), animate: false });
+  }, [isFullscreen]);
+
+  const openFullscreen = () => {
+    // 戻る操作やスワイプバックで全画面だけを閉じられるよう、同じ URL のエントリを積む
+    window.history.pushState({ [FULLSCREEN_HISTORY_KEY]: true }, "");
+    historyEntryRef.current = true;
+    setFullscreen(true);
+  };
+
+  const closeFullscreen = useCallback(() => {
+    // 積んだエントリは戻る操作で取り除き、popstate で全画面を解除する
+    if (historyEntryRef.current) window.history.back();
+    else setFullscreen(false);
+  }, []);
+
+  useEffect(() => {
+    if (!fullscreen) return;
+    const handlePopState = () => {
+      historyEntryRef.current = false;
+      setFullscreen(false);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeFullscreen();
+    };
+    window.addEventListener("popstate", handlePopState);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [fullscreen, closeFullscreen]);
 
   useEffect(() => {
     if (phase !== "fading") return;
@@ -171,7 +242,10 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
   return (
     <section className="flex flex-col gap-3">
       <h2 className="text-sm font-semibold text-muted-foreground">{t("title")}</h2>
-      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-border bg-muted">
+      {/* 全画面中も元の場所に同じ大きさの枠を残し、ページのスクロール位置がずれないようにする */}
+      <div
+        className={`aspect-[4/3] w-full rounded-2xl border border-border bg-muted ${isFullscreen ? "" : "relative overflow-hidden"}`}
+      >
         {coordinates.length === 0 ? (
           <p className="absolute inset-0 flex items-center justify-center px-4 text-center text-sm text-muted-foreground">
             {t("noPoints")}
@@ -181,7 +255,12 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
             {t("offline")}
           </p>
         ) : (
-          <>
+          // 全画面では relative の親を外し、画面全体の枠（AppShell）を基準に広げる（iOS のホーム画面アプリでは fixed がずれるため absolute を使用する）
+          <div
+            className={
+              isFullscreen ? "session-map-fullscreen absolute inset-0 z-[60] bg-muted" : "absolute inset-0"
+            }
+          >
             {/* MapLibre の CSS が地図の要素に position: relative を指定するため、absolute での配置に頼らず親の大きさに合わせる */}
             <div ref={containerRef} className="size-full" />
             {phase !== "shown" && (
@@ -194,7 +273,23 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
                 <MapIcon className="relative size-10 text-muted-foreground" />
               </div>
             )}
-          </>
+            {(isFullscreen || phase === "shown") && (
+              <button
+                ref={fullscreenButtonRef}
+                type="button"
+                aria-label={isFullscreen ? t("exitFullscreen") : t("enterFullscreen")}
+                onClick={isFullscreen ? closeFullscreen : openFullscreen}
+                className={`absolute z-20 flex size-10 items-center justify-center rounded-full border border-border bg-background/90 text-foreground backdrop-blur-md transition-colors hover:bg-muted ${
+                  isFullscreen
+                    ?
+                      "right-[calc(env(safe-area-inset-right)+20px)] top-[calc(env(safe-area-inset-top)+40px)]"
+                    : "right-3 top-3"
+                }`}
+              >
+                {isFullscreen ? <Minimize2 className="size-5" /> : <Maximize2 className="size-5" />}
+              </button>
+            )}
+          </div>
         )}
       </div>
     </section>
