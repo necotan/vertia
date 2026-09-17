@@ -283,6 +283,22 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
     }
   }, [isFullscreen, activeStyle, coordinates]);
 
+  // Safari は画面上部のぼかしをページの背景色で色づけるため、全画面の間は地図の背景色に合わせる
+  const fullscreenBackground =
+    isFullscreen && activeStyle !== undefined ? MAP_STYLES[activeStyle].swatch.background : null;
+
+  useEffect(() => {
+    if (fullscreenBackground === null) return;
+    const targets = [document.documentElement, document.body];
+    const previous = targets.map((element) => element.style.backgroundColor);
+    for (const element of targets) element.style.backgroundColor = fullscreenBackground;
+    return () => {
+      targets.forEach((element, index) => {
+        element.style.backgroundColor = previous[index];
+      });
+    };
+  }, [fullscreenBackground]);
+
   const openFullscreen = () => {
     // 戻る操作やスワイプバックで全画面だけを閉じられるよう、同じ URL のエントリを積む
     window.history.pushState({ [FULLSCREEN_HISTORY_KEY]: true }, "");
