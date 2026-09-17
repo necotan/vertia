@@ -57,6 +57,10 @@
         "gestureMac": "Use ⌘ + scroll to zoom the map",
         "enterFullscreen": "View map fullscreen",
         "exitFullscreen": "Exit fullscreen",
+        "speedColors": {
+          "toggle": "Color by speed",
+          "legend": "Speed colors"
+        },
         "styles": {
           "open": "Choose map style",
           "title": "Map Style",

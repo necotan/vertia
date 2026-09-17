@@ -57,6 +57,10 @@
         "gestureMac": "⌘ + スクロールで地図を拡大・縮小できます",
         "enterFullscreen": "地図を全画面で表示",
         "exitFullscreen": "全画面表示を閉じる",
+        "speedColors": {
+          "toggle": "速度で色分け",
+          "legend": "速度ごとの色"
+        },
         "styles": {
           "open": "地図の種類を選択",
           "title": "地図の種類",
