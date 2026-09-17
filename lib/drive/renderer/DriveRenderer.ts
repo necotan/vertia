@@ -1,3 +1,4 @@
+import { defaultDistanceUnit, mpsToUnit, type DistanceUnit } from "@/lib/units";
 import { drawGMagnitude } from "./drawGMagnitude";
 import { drawGMeter } from "./drawGMeter";
 import { drawGpsAccuracy } from "./drawGpsAccuracy";
@@ -17,6 +18,7 @@ export class DriveRenderer {
   private cssHeight = 0;
   private dpr = 1;
   private layout: DriveLayout | null = null;
+  private unit: DistanceUnit = defaultDistanceUnit;
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -47,6 +49,14 @@ export class DriveRenderer {
     this.labels = labels;
   }
 
+  setUnit(unit: DistanceUnit): void {
+    this.unit = unit;
+  }
+
+  private toSpeed(mps: number | null): number | null {
+    return mps === null ? null : mpsToUnit(mps, this.unit);
+  }
+
   private resize(): void {
     const rect = this.canvas.getBoundingClientRect();
     this.cssWidth = rect.width;
@@ -74,8 +84,13 @@ export class DriveRenderer {
     drawRecordingTime(ctx, layout.top, frame.recordingElapsedMs);
     drawGpsAccuracy(ctx, layout.top, frame, this.labels);
     drawGMagnitude(ctx, layout.top, frame.g, this.labels);
-    drawSpeed(ctx, layout.speed, frame.speedKmh, this.labels);
+    drawSpeed(ctx, layout.speed, this.toSpeed(frame.speedMps), this.labels);
     drawGMeter(ctx, layout.gMeter, frame.g);
-    drawStats(ctx, layout.stats, frame, this.labels);
+    drawStats(
+      ctx,
+      layout.stats,
+      { avg: this.toSpeed(frame.avgMps), median: this.toSpeed(frame.medianMps), max: this.toSpeed(frame.maxMps) },
+      this.labels,
+    );
   }
 }

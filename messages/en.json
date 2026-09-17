@@ -90,6 +90,11 @@
       "system": "System",
       "light": "Light",
       "dark": "Dark"
+    },
+    "distanceUnit": "Distance units",
+    "distanceUnitOptions": {
+      "km": "Kilometers",
+      "mi": "Miles"
     }
   },
   "languageOptions": {
@@ -105,7 +110,6 @@
     "recordStop": "Stop recording",
     "saving": "Saving…",
     "canvas": {
-      "speedUnit": "km/h",
       "avg": "AVG",
       "median": "MED",
       "max": "MAX",
@@ -125,5 +129,11 @@
       "geolocationUnavailable": "Could not get your location",
       "saveFailed": "Failed to save the session"
     }
+  },
+  "units": {
+    "km": "km",
+    "mi": "mi",
+    "kmh": "km/h",
+    "mph": "mph"
   }
 }

@@ -1,11 +1,10 @@
 import type { GpsPoint } from "@/lib/db/schema";
-import { mpsToKmh } from "@/lib/geo";
 import { GPS_ACCURACY_LIMIT_M, resolveSpeed } from "./liveStats";
 
 export interface SpeedSample {
   // 記録開始からの経過時間（秒）
   t: number;
-  kmh: number;
+  mps: number;
 }
 
 // グラフに渡す点の上限（これを超えるときは区間ごとに平均して間引く）
@@ -19,7 +18,7 @@ export function buildSpeedSeries(points: GpsPoint[], startedAt: number): SpeedSa
     const speed = resolveSpeed(previous, point);
     previous = point;
     if (speed === null) continue;
-    samples.push({ t: Math.max(0, (point.t - startedAt) / 1000), kmh: mpsToKmh(speed) });
+    samples.push({ t: Math.max(0, (point.t - startedAt) / 1000), mps: speed });
   }
   return downsample(samples, MAX_SAMPLES);
 }
@@ -31,8 +30,8 @@ function downsample(samples: SpeedSample[], max: number): SpeedSample[] {
   for (let i = 0; i < max; i++) {
     const bucket = samples.slice(Math.floor(i * bucketSize), Math.floor((i + 1) * bucketSize));
     if (bucket.length === 0) continue;
-    const sum = bucket.reduce((acc, s) => ({ t: acc.t + s.t, kmh: acc.kmh + s.kmh }), { t: 0, kmh: 0 });
-    result.push({ t: sum.t / bucket.length, kmh: sum.kmh / bucket.length });
+    const sum = bucket.reduce((acc, s) => ({ t: acc.t + s.t, mps: acc.mps + s.mps }), { t: 0, mps: 0 });
+    result.push({ t: sum.t / bucket.length, mps: sum.mps / bucket.length });
   }
   return result;
 }

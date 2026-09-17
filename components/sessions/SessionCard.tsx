@@ -5,14 +5,16 @@ import Link from "next/link";
 import { SkeletonText } from "@/components/ui/Skeleton";
 import type { DriveSession } from "@/lib/db/schema";
 import { formatDuration } from "@/lib/format";
-import { mpsToKmh } from "@/lib/geo";
 import { sessionDetailHref } from "@/lib/routes";
+import { metersToUnit, mpsToUnit, speedUnitOf, useDistanceUnit } from "@/lib/units";
 
 const SKELETON_STAT_KEYS = ["distance", "duration", "maxSpeed"] as const;
 
 export function SessionCard({ session }: { session: DriveSession }) {
   const t = useTranslations("sessions.card");
+  const tUnits = useTranslations("units");
   const format = useFormatter();
+  const unit = useDistanceUnit();
 
   return (
     <Link
@@ -27,7 +29,7 @@ export function SessionCard({ session }: { session: DriveSession }) {
           <div>
             <dt className="text-xs text-muted-foreground">{t("distance")}</dt>
             <dd className="font-mono">
-              {format.number(session.summary.distanceM / 1000, { maximumFractionDigits: 1 })} km
+              {format.number(metersToUnit(session.summary.distanceM, unit), { maximumFractionDigits: 1 })} {tUnits(unit)}
             </dd>
           </div>
           <div>
@@ -36,7 +38,9 @@ export function SessionCard({ session }: { session: DriveSession }) {
           </div>
           <div>
             <dt className="text-xs text-muted-foreground">{t("maxSpeed")}</dt>
-            <dd className="font-mono">{Math.round(mpsToKmh(session.summary.maxSpeedMps))} km/h</dd>
+            <dd className="font-mono">
+              {Math.round(mpsToUnit(session.summary.maxSpeedMps, unit))} {tUnits(speedUnitOf[unit])}
+            </dd>
           </div>
         </dl>
       )}

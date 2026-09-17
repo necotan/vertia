@@ -11,7 +11,7 @@ function fitNumberFontSize(ctx: CanvasRenderingContext2D, rect: Rect): number {
 export function drawSpeed(
   ctx: CanvasRenderingContext2D,
   rect: Rect,
-  speedKmh: number | null,
+  speed: number | null,
   labels: DriveLabels,
 ): void {
   if (rect.w <= 0 || rect.h <= 0) return;
@@ -26,11 +26,11 @@ export function drawSpeed(
   const baseline = rect.y + (rect.h - blockH) / 2 + capHeight;
   const cx = rect.x + rect.w / 2;
 
-  ctx.fillStyle = speedKmh === null ? COLORS.placeholder : COLORS.text;
+  ctx.fillStyle = speed === null ? COLORS.placeholder : COLORS.text;
   ctx.font = `700 ${fontSize}px ${NUMBER_FONT}`;
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
-  ctx.fillText(speedKmh === null ? "0" : String(Math.min(999, Math.round(speedKmh))), cx, baseline);
+  ctx.fillText(speed === null ? "0" : String(Math.min(999, Math.round(speed))), cx, baseline);
 
   ctx.fillStyle = COLORS.subText;
   ctx.font = `${unitSize}px ${LABEL_FONT}`;
