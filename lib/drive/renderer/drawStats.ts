@@ -1,12 +1,18 @@
-import { COLORS, LABEL_FONT, NUMBER_FONT, type DriveFrame, type DriveLabels, type Rect } from "./types";
+import { COLORS, LABEL_FONT, NUMBER_FONT, type DriveLabels, type Rect } from "./types";
 
-export function drawStats(ctx: CanvasRenderingContext2D, rect: Rect, frame: DriveFrame, labels: DriveLabels): void {
+export interface SpeedStats {
+  avg: number | null;
+  median: number | null;
+  max: number | null;
+}
+
+export function drawStats(ctx: CanvasRenderingContext2D, rect: Rect, stats: SpeedStats, labels: DriveLabels): void {
   if (rect.w <= 0 || rect.h <= 0) return;
 
   const items: { label: string; value: number | null }[] = [
-    { label: labels.avg, value: frame.avgKmh },
-    { label: labels.median, value: frame.medianKmh },
-    { label: labels.max, value: frame.maxKmh },
+    { label: labels.avg, value: stats.avg },
+    { label: labels.median, value: stats.median },
+    { label: labels.max, value: stats.max },
   ];
 
   const colW = rect.w / items.length;

@@ -12,10 +12,13 @@ import { DriveController, initialDriveUiState, type DriveUiState } from "@/lib/d
 import { DriveRenderer } from "@/lib/drive/renderer/DriveRenderer";
 import { TOP_BAR_Y } from "@/lib/drive/renderer/layout";
 import { setDrivePalette, type DriveLabels, type Rect } from "@/lib/drive/renderer/types";
+import { speedUnitOf, useDistanceUnit } from "@/lib/units";
 
 export function DriveScreen() {
   const t = useTranslations("drive");
   const tCommon = useTranslations("common");
+  const tUnits = useTranslations("units");
+  const unit = useDistanceUnit();
   const toast = useToast();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const controllerRef = useRef<DriveController | null>(null);
@@ -25,7 +28,7 @@ export function DriveScreen() {
 
   const labels = useMemo<DriveLabels>(
     () => ({
-      speedUnit: t("canvas.speedUnit"),
+      speedUnit: tUnits(speedUnitOf[unit]),
       avg: t("canvas.avg"),
       median: t("canvas.median"),
       max: t("canvas.max"),
@@ -33,9 +36,10 @@ export function DriveScreen() {
       gpsWaiting: t("canvas.gpsWaiting"),
       gUnit: t("canvas.gUnit"),
     }),
-    [t],
+    [t, tUnits, unit],
   );
   const labelsRef = useRef(labels);
+  const unitRef = useRef(unit);
   const { resolvedTheme } = useTheme();
 
   useEffect(() => {
@@ -48,6 +52,11 @@ export function DriveScreen() {
   }, [labels]);
 
   useEffect(() => {
+    unitRef.current = unit;
+    rendererRef.current?.setUnit(unit);
+  }, [unit]);
+
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const controller = new DriveController(setUi);
@@ -56,6 +65,7 @@ export function DriveScreen() {
     );
     controllerRef.current = controller;
     rendererRef.current = renderer;
+    renderer.setUnit(unitRef.current);
     // next-themes のテーマが確定する前の最初のフレームも正しい配色で描くよう、<html> のクラスから決めておく
     setDrivePalette(document.documentElement.classList.contains("dark") ? "dark" : "light");
     renderer.start();

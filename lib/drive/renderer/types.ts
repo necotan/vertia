@@ -2,12 +2,12 @@ import type { GForce } from "../gForce";
 
 // DriveController が保持し、描画ループが毎フレーム参照する
 export interface DriveFrame {
-  speedKmh: number | null;
+  speedMps: number | null;
   gpsAccuracyM: number | null;
   g: GForce | null;
-  avgKmh: number | null;
-  medianKmh: number | null;
-  maxKmh: number | null;
+  avgMps: number | null;
+  medianMps: number | null;
+  maxMps: number | null;
   recordingElapsedMs: number | null;
 }
 

@@ -3,6 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { locales, saveLocale } from "@/lib/i18n/config";
+import { distanceUnits, saveDistanceUnit, useDistanceUnit } from "@/lib/units";
 
 const themes = ["system", "light", "dark"] as const;
 
@@ -51,6 +52,7 @@ export function SettingsScreen() {
   const tLanguage = useTranslations("languageOptions");
   const locale = useLocale();
   const { theme, setTheme } = useTheme();
+  const distanceUnit = useDistanceUnit();
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-8 px-4 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-[calc(env(safe-area-inset-top)+2.5rem)] sm:px-6">
@@ -71,6 +73,16 @@ export function SettingsScreen() {
         options={themes.map((value) => ({ value, label: t(`themeOptions.${value}`) }))}
         value={theme}
         onChange={setTheme}
+      />
+
+      <SegmentedControl
+        label={t("distanceUnit")}
+        options={distanceUnits.map((value) => ({ value, label: t(`distanceUnitOptions.${value}`) }))}
+        value={distanceUnit}
+        onChange={(value) => {
+          const next = distanceUnits.find((u) => u === value);
+          if (next) saveDistanceUnit(next);
+        }}
       />
     </main>
   );

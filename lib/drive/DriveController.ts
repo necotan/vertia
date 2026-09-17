@@ -1,4 +1,3 @@
-import { mpsToKmh } from "@/lib/geo";
 import { detectDriveCapabilities, isDriveSupported } from "@/lib/sensors/capabilities";
 import { watchGeolocation, type GeoErrorKind, type GeoFix } from "@/lib/sensors/geolocation";
 import {
@@ -42,12 +41,12 @@ const GPS_STALE_MS = 5000;
 export class DriveController {
   private ui: DriveUiState = initialDriveUiState;
   private readonly frame: DriveFrame = {
-    speedKmh: null,
+    speedMps: null,
     gpsAccuracyM: null,
     g: null,
-    avgKmh: null,
-    medianKmh: null,
-    maxKmh: null,
+    avgMps: null,
+    medianMps: null,
+    maxMps: null,
     recordingElapsedMs: null,
   };
   private readonly wakeLock: WakeLockKeeper;
@@ -70,7 +69,7 @@ export class DriveController {
   readonly getFrame = (): DriveFrame => {
     const now = Date.now();
     if (this.lastFix && now - this.lastFixReceivedAt > GPS_STALE_MS) {
-      this.frame.speedKmh = null;
+      this.frame.speedMps = null;
       this.frame.gpsAccuracyM = null;
     }
     this.frame.recordingElapsedMs = this.recorder ? now - this.recorder.startedAt : null;
@@ -117,9 +116,9 @@ export class DriveController {
     } catch {
       this.setUi({ phase: "ready", error: "saveFailed" });
     }
-    this.frame.avgKmh = null;
-    this.frame.medianKmh = null;
-    this.frame.maxKmh = null;
+    this.frame.avgMps = null;
+    this.frame.medianMps = null;
+    this.frame.maxMps = null;
   }
 
   async dispose(): Promise<void> {
@@ -189,7 +188,7 @@ export class DriveController {
     const speed = resolveSpeed(this.lastFix, fix);
     this.lastFix = fix;
     this.lastFixReceivedAt = Date.now();
-    this.frame.speedKmh = speed === null ? null : mpsToKmh(speed);
+    this.frame.speedMps = speed;
     this.frame.gpsAccuracyM = fix.accuracy;
     if (this.ui.error === "geolocationUnavailable") this.setUi({ error: null });
 
@@ -197,9 +196,9 @@ export class DriveController {
       this.recorder.addFix(fix);
       this.stats.addFix(fix);
       const s = this.stats.snapshot(Date.now());
-      this.frame.avgKmh = s.avgSpeedMps === null ? null : mpsToKmh(s.avgSpeedMps);
-      this.frame.medianKmh = s.medianSpeedMps === null ? null : mpsToKmh(s.medianSpeedMps);
-      this.frame.maxKmh = s.maxSpeedMps === null ? null : mpsToKmh(s.maxSpeedMps);
+      this.frame.avgMps = s.avgSpeedMps;
+      this.frame.medianMps = s.medianSpeedMps;
+      this.frame.maxMps = s.maxSpeedMps;
     }
   };
 
@@ -230,7 +229,7 @@ export class DriveController {
     this.averager = null;
     this.calibration = null;
     this.lastFix = null;
-    this.frame.speedKmh = null;
+    this.frame.speedMps = null;
     this.frame.gpsAccuracyM = null;
     this.frame.g = null;
   }

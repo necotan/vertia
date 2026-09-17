@@ -13,7 +13,7 @@ import { db, type DriveSession, type SessionSummary } from "@/lib/db/schema";
 import { deleteSession, getSessionGpsPoints } from "@/lib/db/sessionRepository";
 import { exportSessionFile, isTransferSupported } from "@/lib/db/sessionTransfer";
 import { formatDuration } from "@/lib/format";
-import { mpsToKmh } from "@/lib/geo";
+import { metersToUnit, mpsToUnit, speedUnitOf, useDistanceUnit } from "@/lib/units";
 import { SessionMap } from "./SessionMap";
 import { SpeedChart } from "./SpeedChart";
 
@@ -40,8 +40,11 @@ function StatSection({ title, items }: { title: string; items: StatItem[] }) {
 
 function SummarySections({ summary }: { summary: SessionSummary }) {
   const t = useTranslations("sessions.detail");
+  const tUnits = useTranslations("units");
   const format = useFormatter();
-  const kmh = (mps: number) => String(Math.round(mpsToKmh(mps)));
+  const unit = useDistanceUnit();
+  const speedUnit = tUnits(speedUnitOf[unit]);
+  const speed = (mps: number) => String(Math.round(mpsToUnit(mps, unit)));
   const g = (value: number) => format.number(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return (
@@ -51,8 +54,8 @@ function SummarySections({ summary }: { summary: SessionSummary }) {
         items={[
           {
             label: t("distance"),
-            value: format.number(summary.distanceM / 1000, { maximumFractionDigits: 1 }),
-            unit: "km",
+            value: format.number(metersToUnit(summary.distanceM, unit), { maximumFractionDigits: 1 }),
+            unit: tUnits(unit),
           },
           { label: t("duration"), value: formatDuration(summary.durationMs) },
         ]}
@@ -60,9 +63,9 @@ function SummarySections({ summary }: { summary: SessionSummary }) {
       <StatSection
         title={t("sections.speed")}
         items={[
-          { label: t("avgSpeed"), value: kmh(summary.avgSpeedMps), unit: "km/h" },
-          { label: t("medianSpeed"), value: kmh(summary.medianSpeedMps), unit: "km/h" },
-          { label: t("maxSpeed"), value: kmh(summary.maxSpeedMps), unit: "km/h" },
+          { label: t("avgSpeed"), value: speed(summary.avgSpeedMps), unit: speedUnit },
+          { label: t("medianSpeed"), value: speed(summary.medianSpeedMps), unit: speedUnit },
+          { label: t("maxSpeed"), value: speed(summary.maxSpeedMps), unit: speedUnit },
         ]}
       />
       <StatSection

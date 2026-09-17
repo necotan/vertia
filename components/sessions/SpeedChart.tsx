@@ -7,6 +7,7 @@ import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip,
 import type { GpsPoint } from "@/lib/db/schema";
 import { buildSpeedSeries } from "@/lib/drive/speedSeries";
 import { formatDuration } from "@/lib/format";
+import { mpsToUnit, speedUnitOf, useDistanceUnit } from "@/lib/units";
 
 const CHART_COLORS = {
   light: {
@@ -33,7 +34,13 @@ export function SpeedChart({ points, startedAt }: { points: GpsPoint[]; startedA
   const t = useTranslations("sessions.detail.speedChart");
   const { resolvedTheme } = useTheme();
   const colors = CHART_COLORS[resolvedTheme === "dark" ? "dark" : "light"];
-  const data = useMemo(() => buildSpeedSeries(points, startedAt), [points, startedAt]);
+  const tUnits = useTranslations("units");
+  const unit = useDistanceUnit();
+  const speedUnit = tUnits(speedUnitOf[unit]);
+  const data = useMemo(
+    () => buildSpeedSeries(points, startedAt).map((s) => ({ t: s.t, speed: mpsToUnit(s.mps, unit) })),
+    [points, startedAt, unit],
+  );
 
   return (
     <section className="flex flex-col gap-3">
@@ -65,7 +72,7 @@ export function SpeedChart({ points, startedAt }: { points: GpsPoint[]; startedA
                 minTickGap={24}
               />
               <YAxis
-                dataKey="kmh"
+                dataKey="speed"
                 domain={[0, "auto"]}
                 fontSize={10}
                 axisLine={false}
@@ -85,11 +92,11 @@ export function SpeedChart({ points, startedAt }: { points: GpsPoint[]; startedA
                 itemStyle={{ color: colors.tooltipText }}
                 labelStyle={{ color: colors.tooltipText }}
                 labelFormatter={(label) => formatElapsed(Number(label))}
-                formatter={(value) => [`${Math.round(Number(value))} km/h`, t("speed")]}
+                formatter={(value) => [`${Math.round(Number(value))} ${speedUnit}`, t("speed")]}
               />
               <Area
                 type="linear"
-                dataKey="kmh"
+                dataKey="speed"
                 stroke="none"
                 fill="url(#speedChartArea)"
                 isAnimationActive={false}
@@ -99,7 +106,7 @@ export function SpeedChart({ points, startedAt }: { points: GpsPoint[]; startedA
               />
               <Line
                 type="linear"
-                dataKey="kmh"
+                dataKey="speed"
                 stroke={colors.line}
                 strokeWidth={2}
                 dot={false}

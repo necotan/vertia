@@ -90,6 +90,11 @@
       "system": "システム",
       "light": "ライト",
       "dark": "ダーク"
+    },
+    "distanceUnit": "距離の単位",
+    "distanceUnitOptions": {
+      "km": "キロメートル",
+      "mi": "マイル"
     }
   },
   "languageOptions": {
@@ -105,7 +110,6 @@
     "recordStop": "記録終了",
     "saving": "保存中…",
     "canvas": {
-      "speedUnit": "km/h",
       "avg": "平均",
       "median": "中央値",
       "max": "最高",
@@ -125,5 +129,11 @@
       "geolocationUnavailable": "位置情報を取得できませんでした",
       "saveFailed": "記録の保存に失敗しました"
     }
+  },
+  "units": {
+    "km": "km",
+    "mi": "mi",
+    "kmh": "km/h",
+    "mph": "mph"
   }
 }
