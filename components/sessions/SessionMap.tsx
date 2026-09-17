@@ -1,41 +1,114 @@
 "use client";
 
 import "maplibre-gl/dist/maplibre-gl.css";
-import { Map as MapIcon, Maximize2, Minimize2 } from "lucide-react";
-import type { FitBoundsOptions, LngLatBounds, Map as MapLibreMap } from "maplibre-gl";
+import { Layers, Map as MapIcon, Maximize2, Minimize2 } from "lucide-react";
+import type {
+  FitBoundsOptions,
+  LngLatBounds,
+  Map as MapLibreMap,
+  TransformStyleFunction,
+} from "maplibre-gl";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { BottomSheet } from "@/components/ui/BottomSheet";
 import type { GpsPoint } from "@/lib/db/schema";
 import { GPS_ACCURACY_LIMIT_M } from "@/lib/drive/liveStats";
+import { MAP_STYLES, type MapStyleId, saveMapStyle, themeMapStyle, useSavedMapStyle } from "@/lib/mapStyles";
+import { MapStylePicker } from "./MapStylePicker";
 
 const WORKER_URL = "/maplibre/maplibre-gl-worker.mjs";
 const ATTRIBUTION_COLLAPSE_MS = 5000;
 const PLACEHOLDER_FADE_MS = 300;
-
-const STYLE_URLS = {
-  light: "https://tiles.openfreemap.org/styles/positron",
-  dark: "https://tiles.openfreemap.org/styles/dark",
-} as const;
 
 const ROUTE_COLORS = {
   light: { line: "#171717", casing: "#ffffff" },
   dark: { line: "#fafafa", casing: "#0a0a0a" },
 } as const;
 
-// 全画面表示を開いたときに積む履歴のエントリのキー
+// 全画面表示やスタイルの選択を開いたときに積む履歴のエントリのキー
 const FULLSCREEN_HISTORY_KEY = "vertiaSessionMapFullscreen";
+const STYLE_SHEET_HISTORY_KEY = "vertiaSessionMapStyleSheet";
 
-function getFitBoundsOptions(fullscreen: boolean, button: HTMLElement | null): FitBoundsOptions {
+function getFitBoundsOptions(fullscreen: boolean, button: HTMLElement | null, pitch: number): FitBoundsOptions {
   // 実際の位置から上の余白を決める
   const top = button ? button.offsetTop + button.offsetHeight + 16 : 96;
   return {
     padding: fullscreen ? { top, bottom: 64, left: 48, right: 48 } : 40,
     maxZoom: 16,
+    pitch,
+    bearing: 0,
   };
 }
 
 type Coordinate = [number, number];
+type StyleSpecification = Parameters<TransformStyleFunction>[1];
+type RouteStyle = Pick<StyleSpecification, "sources" | "layers">;
+
+// ルートと始点・終点を描くためのソースとレイヤー
+function buildRouteStyle(coordinates: Coordinate[], darkStyle: boolean): RouteStyle {
+  const colors = ROUTE_COLORS[darkStyle ? "dark" : "light"];
+  return {
+    sources: {
+      route: {
+        type: "geojson",
+        data: { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates } },
+      },
+      endpoints: {
+        type: "geojson",
+        data: {
+          type: "FeatureCollection",
+          features: [
+            { type: "Feature", properties: { kind: "start" }, geometry: { type: "Point", coordinates: coordinates[0] } },
+            {
+              type: "Feature",
+              properties: { kind: "end" },
+              geometry: { type: "Point", coordinates: coordinates[coordinates.length - 1] },
+            },
+          ],
+        },
+      },
+    },
+    layers: [
+      {
+        id: "route-casing",
+        type: "line",
+        source: "route",
+        layout: { "line-join": "round", "line-cap": "round" },
+        paint: { "line-color": colors.casing, "line-width": 7 },
+      },
+      {
+        id: "route-line",
+        type: "line",
+        source: "route",
+        layout: { "line-join": "round", "line-cap": "round" },
+        paint: { "line-color": colors.line, "line-width": 4 },
+      },
+      {
+        id: "endpoints",
+        type: "circle",
+        source: "endpoints",
+        paint: {
+          "circle-radius": 6,
+          "circle-color": ["match", ["get", "kind"], "start", colors.casing, colors.line],
+          "circle-stroke-color": colors.line,
+          "circle-stroke-width": 3,
+        },
+      },
+    ],
+  };
+}
+
+// 立体表示のスタイルだけ、地図を傾けたり回したりできるようにする
+function applyTiltGestures(map: MapLibreMap, pitch: number) {
+  if (pitch > 0) {
+    map.dragRotate.enable();
+    map.touchPitch.enable();
+  } else {
+    map.dragRotate.disable();
+    map.touchPitch.disable();
+  }
+}
 // loading: プレースホルダで地図を覆う, fading: プレースホルダをフェードアウト中, shown: 地図のみ
 type Phase = "loading" | "fading" | "shown";
 
@@ -57,11 +130,14 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
   // 地図のスタイルとタイルの読み込みが終わるまでは、帰属表示ボタンごとプレースホルダで覆う
   const [phase, setPhase] = useState<Phase>("loading");
   const [fullscreen, setFullscreen] = useState(false);
+  const [styleSheetOpen, setStyleSheetOpen] = useState(false);
+  const savedStyle = useSavedMapStyle();
   const mapRef = useRef<MapLibreMap | null>(null);
   const boundsRef = useRef<LngLatBounds | null>(null);
   const fullscreenButtonRef = useRef<HTMLButtonElement>(null);
   // 全画面を開いたときに積んだ履歴のエントリが、まだ残っているか
   const historyEntryRef = useRef(false);
+  const styleSheetEntryRef = useRef(false);
 
   const coordinates = useMemo<Coordinate[]>(
     () => points.filter((p) => p.accuracy <= GPS_ACCURACY_LIMIT_M).map((p) => [p.lng, p.lat]),
@@ -82,8 +158,15 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
 
   // 地図を出せない状態になったら全画面も解除する
   const isFullscreen = fullscreen && coordinates.length > 0 && online;
-  // テーマ切り替え等で地図を作り直すときに、全画面かどうかを引き継ぐ
+  // 選んだスタイルは全画面のときだけ使用し、小さい地図はテーマに合わせる
+  const activeStyle: MapStyleId | undefined =
+    theme === undefined ? undefined : isFullscreen ? (savedStyle ?? themeMapStyle(theme)) : themeMapStyle(theme);
+  // テーマ切り替え等で地図を作り直すときに、全画面かどうかとスタイルを引き継ぐ
   const isFullscreenRef = useRef(isFullscreen);
+  const activeStyleRef = useRef(activeStyle);
+  // 地図に反映済みの状態
+  const appliedFullscreenRef = useRef(isFullscreen);
+  const appliedStyleRef = useRef<MapStyleId | null>(null);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -103,18 +186,20 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
         (acc, coordinate) => acc.extend(coordinate),
         new LngLatBounds(coordinates[0], coordinates[0]),
       );
-      const colors = ROUTE_COLORS[theme];
       const fullscreenAtCreate = isFullscreenRef.current;
+      const styleAtCreate = activeStyleRef.current ?? themeMapStyle(theme);
+      const style = MAP_STYLES[styleAtCreate];
 
       map = new Map({
         container,
-        style: STYLE_URLS[theme],
+        style: style.url,
         bounds,
-        fitBoundsOptions: getFitBoundsOptions(fullscreenAtCreate, fullscreenButtonRef.current),
+        fitBoundsOptions: getFitBoundsOptions(fullscreenAtCreate, fullscreenButtonRef.current, style.pitch),
+        pitch: style.pitch,
         // 全画面では1本指で地図を動かせるようにする
         cooperativeGestures: !fullscreenAtCreate,
-        dragRotate: false,
-        touchPitch: false,
+        dragRotate: style.pitch > 0,
+        touchPitch: style.pitch > 0,
         attributionControl: { compact: true },
         locale,
       });
@@ -122,6 +207,8 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
       const loadedMap = map;
       mapRef.current = loadedMap;
       boundsRef.current = bounds;
+      appliedFullscreenRef.current = fullscreenAtCreate;
+      appliedStyleRef.current = styleAtCreate;
       // OpenFreeMap の dark スタイルは sprite にない模様（wood-pattern）を参照していて警告が出るため、見つからない画像は透明な 1px の画像で埋める
       loadedMap.setMissingStyleImageResolver((id) => {
         if (!loadedMap.hasImage(id)) loadedMap.addImage(id, { width: 1, height: 1, data: new Uint8Array(4) });
@@ -134,50 +221,11 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
             ?.classList.remove("maplibregl-compact-show");
         }, ATTRIBUTION_COLLAPSE_MS);
 
-        loadedMap.addSource("route", {
-          type: "geojson",
-          data: { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates } },
-        });
-        loadedMap.addLayer({
-          id: "route-casing",
-          type: "line",
-          source: "route",
-          layout: { "line-join": "round", "line-cap": "round" },
-          paint: { "line-color": colors.casing, "line-width": 7 },
-        });
-        loadedMap.addLayer({
-          id: "route-line",
-          type: "line",
-          source: "route",
-          layout: { "line-join": "round", "line-cap": "round" },
-          paint: { "line-color": colors.line, "line-width": 4 },
-        });
-
-        loadedMap.addSource("endpoints", {
-          type: "geojson",
-          data: {
-            type: "FeatureCollection",
-            features: [
-              { type: "Feature", properties: { kind: "start" }, geometry: { type: "Point", coordinates: coordinates[0] } },
-              {
-                type: "Feature",
-                properties: { kind: "end" },
-                geometry: { type: "Point", coordinates: coordinates[coordinates.length - 1] },
-              },
-            ],
-          },
-        });
-        loadedMap.addLayer({
-          id: "endpoints",
-          type: "circle",
-          source: "endpoints",
-          paint: {
-            "circle-radius": 6,
-            "circle-color": ["match", ["get", "kind"], "start", colors.casing, colors.line],
-            "circle-stroke-color": colors.line,
-            "circle-stroke-width": 3,
-          },
-        });
+        // 読み込み前にスタイルを切り替えた場合は、切り替え時にルートを追加済み
+        if (loadedMap.getSource("route")) return;
+        const route = buildRouteStyle(coordinates, style.dark);
+        for (const [id, source] of Object.entries(route.sources)) loadedMap.addSource(id, source);
+        for (const layer of route.layers) loadedMap.addLayer(layer);
       });
     });
 
@@ -186,6 +234,7 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
       clearTimeout(collapseTimer);
       mapRef.current = null;
       boundsRef.current = null;
+      appliedStyleRef.current = null;
       map?.remove();
       setPhase("loading");
     };
@@ -193,15 +242,46 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
 
   useEffect(() => {
     isFullscreenRef.current = isFullscreen;
+    activeStyleRef.current = activeStyle;
     const map = mapRef.current;
     const bounds = boundsRef.current;
-    if (!map || !bounds) return;
-    if (isFullscreen) map.cooperativeGestures.disable();
-    else map.cooperativeGestures.enable();
-    // 枠の大きさが変わった直後に合わせ直し、ルート全体が見える位置に戻す
-    map.resize();
-    map.fitBounds(bounds, { ...getFitBoundsOptions(isFullscreen, fullscreenButtonRef.current), animate: false });
-  }, [isFullscreen]);
+    const previousStyle = appliedStyleRef.current;
+    if (!map || !bounds || activeStyle === undefined || previousStyle === null) return;
+    const fullscreenChanged = appliedFullscreenRef.current !== isFullscreen;
+    const styleChanged = previousStyle !== activeStyle;
+    if (!fullscreenChanged && !styleChanged) return;
+    appliedFullscreenRef.current = isFullscreen;
+    appliedStyleRef.current = activeStyle;
+    const style = MAP_STYLES[activeStyle];
+
+    // 3D は Liberty を傾けて表示するだけなので、同じ URL のときは読み込み直さない
+    if (MAP_STYLES[previousStyle].url !== style.url) {
+      const route = buildRouteStyle(coordinates, style.dark);
+      // 新しいスタイルにルートを加えてから反映し、切り替え中にルートが消えないようにする
+      map.setStyle(style.url, {
+        transformStyle: (_previous, next) => ({
+          ...next,
+          sources: { ...next.sources, ...route.sources },
+          layers: [...next.layers, ...route.layers],
+        }),
+      });
+    }
+    if (fullscreenChanged) {
+      if (isFullscreen) map.cooperativeGestures.disable();
+      else map.cooperativeGestures.enable();
+    }
+    applyTiltGestures(map, style.pitch);
+
+    if (fullscreenChanged) {
+      map.resize();
+      map.fitBounds(bounds, {
+        ...getFitBoundsOptions(isFullscreen, fullscreenButtonRef.current, style.pitch),
+        animate: false,
+      });
+    } else if (MAP_STYLES[previousStyle].pitch !== style.pitch) {
+      map.easeTo({ pitch: style.pitch, bearing: 0 });
+    }
+  }, [isFullscreen, activeStyle, coordinates]);
 
   const openFullscreen = () => {
     // 戻る操作やスワイプバックで全画面だけを閉じられるよう、同じ URL のエントリを積む
@@ -212,18 +292,45 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
 
   const closeFullscreen = useCallback(() => {
     // 積んだエントリは戻る操作で取り除き、popstate で全画面を解除する
-    if (historyEntryRef.current) window.history.back();
-    else setFullscreen(false);
+    if (historyEntryRef.current) {
+      // スタイルの選択を開いている場合は、そのエントリもまとめて取り除く
+      const steps = styleSheetEntryRef.current ? 2 : 1;
+      styleSheetEntryRef.current = false;
+      window.history.go(-steps);
+    } else {
+      setFullscreen(false);
+      setStyleSheetOpen(false);
+    }
+  }, []);
+
+  const openStyleSheet = () => {
+    // 戻る操作ではスタイルの選択だけを閉じられるよう、もう1つエントリを積む
+    window.history.pushState({ [FULLSCREEN_HISTORY_KEY]: true, [STYLE_SHEET_HISTORY_KEY]: true }, "");
+    styleSheetEntryRef.current = true;
+    setStyleSheetOpen(true);
+  };
+
+  const closeStyleSheet = useCallback(() => {
+    if (styleSheetEntryRef.current) window.history.back();
+    else setStyleSheetOpen(false);
   }, []);
 
   useEffect(() => {
     if (!fullscreen) return;
     const handlePopState = () => {
+      if (styleSheetEntryRef.current) {
+        styleSheetEntryRef.current = false;
+        setStyleSheetOpen(false);
+        return;
+      }
       historyEntryRef.current = false;
       setFullscreen(false);
+      setStyleSheetOpen(false);
     };
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") closeFullscreen();
+      if (event.key !== "Escape") return;
+      if (styleSheetOpen) closeStyleSheet();
+      else closeFullscreen();
     };
     window.addEventListener("popstate", handlePopState);
     window.addEventListener("keydown", handleKeyDown);
@@ -231,7 +338,7 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
       window.removeEventListener("popstate", handlePopState);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [fullscreen, closeFullscreen]);
+  }, [fullscreen, styleSheetOpen, closeFullscreen, closeStyleSheet]);
 
   useEffect(() => {
     if (phase !== "fading") return;
@@ -288,6 +395,27 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
               >
                 {isFullscreen ? <Minimize2 className="size-5" /> : <Maximize2 className="size-5" />}
               </button>
+            )}
+            {isFullscreen && phase === "shown" && activeStyle !== undefined && (
+              <>
+                <button
+                  type="button"
+                  aria-label={t("styles.open")}
+                  aria-expanded={styleSheetOpen}
+                  onClick={openStyleSheet}
+                  className="absolute right-[calc(env(safe-area-inset-right)+20px)] top-[calc(env(safe-area-inset-top)+92px)] z-20 flex size-10 items-center justify-center rounded-full border border-border bg-background/90 text-foreground backdrop-blur-md transition-colors hover:bg-muted"
+                >
+                  <Layers className="size-5" />
+                </button>
+                <BottomSheet
+                  open={styleSheetOpen}
+                  title={t("styles.title")}
+                  closeLabel={t("styles.close")}
+                  onClose={closeStyleSheet}
+                >
+                  <MapStylePicker value={activeStyle} onChange={saveMapStyle} />
+                </BottomSheet>
+              </>
             )}
           </div>
         )}

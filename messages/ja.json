@@ -56,7 +56,20 @@
         "gestureWindows": "Ctrl + スクロールで地図を拡大・縮小できます",
         "gestureMac": "⌘ + スクロールで地図を拡大・縮小できます",
         "enterFullscreen": "地図を全画面で表示",
-        "exitFullscreen": "全画面表示を閉じる"
+        "exitFullscreen": "全画面表示を閉じる",
+        "styles": {
+          "open": "地図の種類を選択",
+          "title": "地図の種類",
+          "close": "閉じる",
+          "names": {
+            "positron": "Positron",
+            "bright": "Bright",
+            "liberty": "Liberty",
+            "dark": "Dark",
+            "fiord": "Fiord",
+            "3d": "3D"
+          }
+        }
       },
       "speedChart": {
         "title": "速度の推移",

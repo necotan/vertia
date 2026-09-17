@@ -56,7 +56,20 @@
         "gestureWindows": "Use Ctrl + scroll to zoom the map",
         "gestureMac": "Use ⌘ + scroll to zoom the map",
         "enterFullscreen": "View map fullscreen",
-        "exitFullscreen": "Exit fullscreen"
+        "exitFullscreen": "Exit fullscreen",
+        "styles": {
+          "open": "Choose map style",
+          "title": "Map Style",
+          "close": "Close",
+          "names": {
+            "positron": "Positron",
+            "bright": "Bright",
+            "liberty": "Liberty",
+            "dark": "Dark",
+            "fiord": "Fiord",
+            "3d": "3D"
+          }
+        }
       },
       "speedChart": {
         "title": "Speed over time",
