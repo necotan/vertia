@@ -19,7 +19,7 @@ export function drawGMeter(ctx: CanvasRenderingContext2D, circle: Circle, g: GFo
   ctx.stroke();
 
   const ringCount = Math.round(G_METER_FULL_SCALE / RING_STEP_G);
-  const tickSize = Math.max(10, r * 0.07);
+  const tickSize = Math.max(9, r * 0.06);
   ctx.font = `${tickSize}px ${NUMBER_FONT}`;
   ctx.textAlign = "right";
   ctx.textBaseline = "top";
