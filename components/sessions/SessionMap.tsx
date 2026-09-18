@@ -416,6 +416,9 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
     return () => clearTimeout(timer);
   }, [phase]);
 
+  // プレースホルダが消え終わるのを待つと地図だけ先に見える時間ができるため、フェードの開始と同時に操作を出す
+  const controlsVisible = phase !== "loading";
+
   return (
     <section className="flex flex-col gap-3">
       <h2 className="text-sm font-semibold text-muted-foreground">{t("title")}</h2>
@@ -450,13 +453,19 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
                 <MapIcon className="relative size-10 text-muted-foreground" />
               </div>
             )}
-            {(isFullscreen || phase === "shown") && (
+            <div
+              inert={!isFullscreen && !controlsVisible}
+              className={`pointer-events-none absolute inset-0 z-20 transition-opacity ${
+                isFullscreen || controlsVisible ? "" : "opacity-0"
+              }`}
+              style={{ transitionDuration: `${PLACEHOLDER_FADE_MS}ms` }}
+            >
               <button
                 ref={fullscreenButtonRef}
                 type="button"
                 aria-label={isFullscreen ? t("exitFullscreen") : t("enterFullscreen")}
                 onClick={isFullscreen ? closeFullscreen : openFullscreen}
-                className={`absolute z-20 flex size-10 items-center justify-center rounded-full border border-border bg-background/90 text-foreground backdrop-blur-md transition-colors hover:bg-muted ${
+                className={`pointer-events-auto absolute flex size-10 items-center justify-center rounded-full border border-border bg-background/90 text-foreground backdrop-blur-md transition-colors hover:bg-muted ${
                   isFullscreen
                     ?
                       "right-[calc(env(safe-area-inset-right)+20px)] top-[calc(env(safe-area-inset-top)+40px)]"
@@ -465,58 +474,60 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
               >
                 {isFullscreen ? <Minimize2 className="size-5" /> : <Maximize2 className="size-5" />}
               </button>
-            )}
-            {phase === "shown" && (
-              <>
-                <button
-                  type="button"
-                  aria-label={t("speedColors.toggle")}
-                  aria-pressed={speedColors}
-                  onClick={() => saveRouteSpeedColors(!speedColors)}
-                  className={`absolute z-20 flex size-10 items-center justify-center rounded-full border backdrop-blur-md transition-colors ${
-                    speedColors
-                      ?
-                        "border-background bg-foreground/90 text-background hover:bg-foreground/80"
-                      : "border-border bg-background/90 text-foreground hover:bg-muted"
-                  } ${
+            </div>
+            <div
+              inert={!controlsVisible}
+              className={`pointer-events-none absolute inset-0 z-20 transition-opacity ${controlsVisible ? "" : "opacity-0"}`}
+              style={{ transitionDuration: `${PLACEHOLDER_FADE_MS}ms` }}
+            >
+              <button
+                type="button"
+                aria-label={t("speedColors.toggle")}
+                aria-pressed={speedColors}
+                onClick={() => saveRouteSpeedColors(!speedColors)}
+                className={`pointer-events-auto absolute flex size-10 items-center justify-center rounded-full border backdrop-blur-md transition-colors ${
+                  speedColors
+                    ?
+                      "border-background bg-foreground/90 text-background hover:bg-foreground/80"
+                    : "border-border bg-background/90 text-foreground hover:bg-muted"
+                } ${
+                  isFullscreen
+                    ? "right-[calc(env(safe-area-inset-right)+20px)] top-[calc(env(safe-area-inset-top)+144px)]"
+                    : "right-3 top-[3.75rem]"
+                }`}
+              >
+                <Gauge className="size-5" />
+              </button>
+              {speedColors && (
+                <RouteSpeedLegend
+                  className={`absolute ${
                     isFullscreen
-                      ? "right-[calc(env(safe-area-inset-right)+20px)] top-[calc(env(safe-area-inset-top)+144px)]"
-                      : "right-3 top-[3.75rem]"
+                      ? "left-[calc(env(safe-area-inset-left)+20px)] top-[calc(env(safe-area-inset-top)+40px)]"
+                      : "left-3 top-3"
                   }`}
-                >
-                  <Gauge className="size-5" />
-                </button>
-                {speedColors && (
-                  <RouteSpeedLegend
-                    className={`absolute z-20 ${
-                      isFullscreen
-                        ? "left-[calc(env(safe-area-inset-left)+20px)] top-[calc(env(safe-area-inset-top)+40px)]"
-                        : "left-3 top-3"
-                    }`}
-                  />
-                )}
-              </>
-            )}
-            {isFullscreen && phase === "shown" && activeStyle !== undefined && (
-              <>
+                />
+              )}
+              {isFullscreen && activeStyle !== undefined && (
                 <button
                   type="button"
                   aria-label={t("styles.open")}
                   aria-expanded={styleSheetOpen}
                   onClick={openStyleSheet}
-                  className="absolute right-[calc(env(safe-area-inset-right)+20px)] top-[calc(env(safe-area-inset-top)+92px)] z-20 flex size-10 items-center justify-center rounded-full border border-border bg-background/90 text-foreground backdrop-blur-md transition-colors hover:bg-muted"
+                  className="pointer-events-auto absolute right-[calc(env(safe-area-inset-right)+20px)] top-[calc(env(safe-area-inset-top)+92px)] flex size-10 items-center justify-center rounded-full border border-border bg-background/90 text-foreground backdrop-blur-md transition-colors hover:bg-muted"
                 >
                   <Layers className="size-5" />
                 </button>
-                <BottomSheet
-                  open={styleSheetOpen}
-                  title={t("styles.title")}
-                  closeLabel={t("styles.close")}
-                  onClose={closeStyleSheet}
-                >
-                  <MapStylePicker value={activeStyle} onChange={saveMapStyle} />
-                </BottomSheet>
-              </>
+              )}
+            </div>
+            {isFullscreen && activeStyle !== undefined && (
+              <BottomSheet
+                open={styleSheetOpen}
+                title={t("styles.title")}
+                closeLabel={t("styles.close")}
+                onClose={closeStyleSheet}
+              >
+                <MapStylePicker value={activeStyle} onChange={saveMapStyle} />
+              </BottomSheet>
             )}
           </div>
         )}
