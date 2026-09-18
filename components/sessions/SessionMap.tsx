@@ -200,6 +200,7 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
   // 選んだスタイルは全画面のときだけ使用し、小さい地図はテーマに合わせる
   const activeStyle: MapStyleId | undefined =
     theme === undefined ? undefined : isFullscreen ? (savedStyle ?? themeMapStyle(theme)) : themeMapStyle(theme);
+  const mapPalette = activeStyle === undefined ? "" : MAP_STYLES[activeStyle].dark ? "dark" : "light";
   // テーマ切り替え等で地図を作り直すときに、全画面かどうかとスタイルを引き継ぐ
   const isFullscreenRef = useRef(isFullscreen);
   const activeStyleRef = useRef(activeStyle);
@@ -437,9 +438,9 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
         ) : (
           // 全画面では relative の親を外し、画面全体の枠（AppShell）を基準に広げる（iOS のホーム画面アプリでは fixed がずれるため absolute を使用する）
           <div
-            className={
+            className={`${mapPalette} ${
               isFullscreen ? "session-map-fullscreen absolute inset-0 z-[60] bg-muted" : "absolute inset-0"
-            }
+            }`}
           >
             {/* MapLibre の CSS が地図の要素に position: relative を指定するため、absolute での配置に頼らず親の大きさに合わせる */}
             <div ref={containerRef} className="size-full" />
