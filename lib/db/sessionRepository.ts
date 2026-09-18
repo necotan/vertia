@@ -8,6 +8,7 @@ import {
   type MotionChunk,
   type SessionCalibration,
   type SessionSummary,
+  type SessionWeather,
 } from "./schema";
 
 // 記録中セッションの最終書き込みがこれより古ければ、中断されたものとみなす
@@ -22,6 +23,7 @@ export async function createSession(calibration: SessionCalibration, startedAt: 
     updatedAt: startedAt,
     calibration,
     summary: null,
+    weather: null,
     schemaVersion: SESSION_SCHEMA_VERSION,
   };
   await db.sessions.add(session);
@@ -39,6 +41,11 @@ export async function appendSessionData(
     if (motionChunks.length > 0) await db.motionChunks.bulkAdd(motionChunks);
     await db.sessions.update(sessionId, { updatedAt });
   });
+}
+
+// 記録開始時の天気を後から書き込む
+export async function setSessionWeather(sessionId: string, weather: SessionWeather): Promise<void> {
+  await db.sessions.update(sessionId, { weather });
 }
 
 export async function completeSession(sessionId: string, endedAt: number, summary: SessionSummary): Promise<void> {

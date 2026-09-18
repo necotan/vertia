@@ -149,10 +149,37 @@
       "saveFailed": "Failed to save the session"
     }
   },
+  "weather": {
+    "title": "Weather",
+    "condition": "Condition",
+    "temperature": "Temperature",
+    "wind": "Wind",
+    "codes": {
+      "clear": "Clear sky",
+      "mainlyClear": "Mainly clear",
+      "partlyCloudy": "Partly cloudy",
+      "overcast": "Overcast",
+      "fog": "Fog",
+      "drizzle": "Drizzle",
+      "freezingDrizzle": "Freezing drizzle",
+      "rain": "Rain",
+      "freezingRain": "Freezing rain",
+      "snow": "Snow",
+      "snowGrains": "Snow grains",
+      "showers": "Rain showers",
+      "snowShowers": "Snow showers",
+      "thunderstorm": "Thunderstorm",
+      "thunderstormHail": "Thunderstorm with hail",
+      "unknown": "Unknown"
+    }
+  },
   "units": {
     "km": "km",
     "mi": "mi",
     "kmh": "km/h",
-    "mph": "mph"
+    "mph": "mph",
+    "mps": "m/s",
+    "celsius": "°C",
+    "fahrenheit": "°F"
   }
 }

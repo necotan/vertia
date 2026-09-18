@@ -1,3 +1,4 @@
+import type { SessionWeather } from "@/lib/db/schema";
 import { detectDriveCapabilities, isDriveSupported } from "@/lib/sensors/capabilities";
 import { watchGeolocation, type GeoErrorKind, type GeoFix } from "@/lib/sensors/geolocation";
 import {
@@ -8,6 +9,7 @@ import {
   type MotionSample,
 } from "@/lib/sensors/motion";
 import { WakeLockKeeper, type WakeLockStatus } from "@/lib/sensors/wakeLock";
+import { WeatherWatcher } from "@/lib/weather/WeatherWatcher";
 import { createCalibration, GForceLowPass, GravityAverager, toGForce, type Calibration } from "./gForce";
 import { G_DISPLAY_TIME_CONSTANT_MS, LiveStats, resolveSpeed } from "./liveStats";
 import { SessionRecorder } from "./recorder";
@@ -58,6 +60,7 @@ export class DriveController {
   private lastFix: GeoFix | null = null;
   private lastFixReceivedAt = 0;
   private recorder: SessionRecorder | null = null;
+  private weather: WeatherWatcher | null = null;
   private unsubscribeMotion: (() => void) | null = null;
   private unsubscribeGeo: (() => void) | null = null;
   private disposed = false;
@@ -91,14 +94,19 @@ export class DriveController {
   async startRecording(): Promise<void> {
     if (this.ui.phase !== "ready" || !this.calibration) return;
     const startedAt = Date.now();
+    let recorder: SessionRecorder;
     try {
-      this.recorder = await SessionRecorder.start({ gravity: this.calibration.gravity }, startedAt, () =>
+      recorder = await SessionRecorder.start({ gravity: this.calibration.gravity }, startedAt, () =>
         this.setUi({ error: "saveFailed" }),
       );
     } catch {
       this.setUi({ error: "saveFailed" });
       return;
     }
+    this.recorder = recorder;
+    // まだ取得できていなければ、記録中に届いた時点で handleWeather が書き込む
+    const weather = this.weather?.current;
+    if (weather) recorder.setWeather(weather);
     this.stats.start(startedAt);
     this.setUi({ phase: "recording", error: null });
   }
@@ -143,6 +151,7 @@ export class DriveController {
     if (!(await waitForMotionData(MOTION_CHECK_TIMEOUT_MS))) return this.fail("motionUnavailable");
     if (this.disposed) return;
 
+    this.weather = new WeatherWatcher(this.handleWeather);
     this.unsubscribeGeo = watchGeolocation(this.handleFix, this.handleGeoError);
     this.unsubscribeMotion = subscribeMotion(this.handleMotion);
     this.beginCalibration();
@@ -191,6 +200,7 @@ export class DriveController {
     this.frame.speedMps = speed;
     this.frame.gpsAccuracyM = fix.accuracy;
     if (this.ui.error === "geolocationUnavailable") this.setUi({ error: null });
+    this.weather?.update(fix.lat, fix.lng);
 
     if (this.recorder) {
       this.recorder.addFix(fix);
@@ -200,6 +210,11 @@ export class DriveController {
       this.frame.medianMps = s.medianSpeedMps;
       this.frame.maxMps = s.maxSpeedMps;
     }
+  };
+
+  // 記録開始に間に合わなかった場合も、届いた時点で記録に書き込む
+  private readonly handleWeather = (weather: SessionWeather): void => {
+    this.recorder?.setWeather(weather);
   };
 
   private readonly handleGeoError = (kind: GeoErrorKind): void => {
@@ -226,6 +241,8 @@ export class DriveController {
     this.unsubscribeGeo?.();
     this.unsubscribeMotion = null;
     this.unsubscribeGeo = null;
+    this.weather?.dispose();
+    this.weather = null;
     this.averager = null;
     this.calibration = null;
     this.lastFix = null;
