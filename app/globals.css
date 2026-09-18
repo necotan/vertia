@@ -3,7 +3,8 @@
 @custom-variant dark (&:where(.dark, .dark *));
 @custom-variant standalone (@media (display-mode: standalone));
 
-:root {
+:root,
+.light {
   --background: #ffffff;
   --foreground: #0a0a0a;
   --card: #ffffff;
@@ -16,6 +17,8 @@
   --secondary-foreground: #171717;
   --skeleton: #f0f0f0;
   --skeleton-shimmer: rgb(255 255 255 / 0.65);
+  --map-attrib-icon: url("data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20fill-rule%3D%22evenodd%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20d%3D%22M4%2010a6%206%200%201%200%2012%200%206%206%200%201%200-12%200m5-3a1%201%200%201%200%202%200%201%201%200%201%200-2%200m0%203a1%201%200%201%201%202%200v3a1%201%200%201%201-2%200%22%2F%3E%3C%2Fsvg%3E");
+  --map-attrib-active: rgb(0 0 0 / 0.05);
 }
 
 .dark {
@@ -31,6 +34,8 @@
   --secondary-foreground: #fafafa;
   --skeleton: #262626;
   --skeleton-shimmer: rgb(255 255 255 / 0.08);
+  --map-attrib-icon: url("data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20fill%3D%22%23fff%22%20fill-rule%3D%22evenodd%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20d%3D%22M4%2010a6%206%200%201%200%2012%200%206%206%200%201%200-12%200m5-3a1%201%200%201%200%202%200%201%201%200%201%200-2%200m0%203a1%201%200%201%201%202%200v3a1%201%200%201%201-2%200%22%2F%3E%3C%2Fsvg%3E");
+  --map-attrib-active: rgb(255 255 255 / 0.08);
 }
 
 @theme inline {
@@ -98,23 +103,22 @@ body {
   background: #000000;
 }
 
-/* MapLibre の出典表示をダーク配色にする（Tailwind の指定は MapLibre の CSS に負けるためレイヤー外に書く） */
-.dark .maplibregl-ctrl-attrib.maplibregl-compact {
+.maplibregl-ctrl.maplibregl-ctrl-attrib.maplibregl-compact {
   background-color: var(--card);
   color: var(--foreground);
 }
 
-.dark .maplibregl-ctrl-attrib a {
+.maplibregl-ctrl.maplibregl-ctrl-attrib a {
   color: var(--foreground);
 }
 
-.dark .maplibregl-ctrl-attrib-button {
+.maplibregl-ctrl.maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-button {
   background-color: transparent;
-  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20fill%3D%22%23fff%22%20fill-rule%3D%22evenodd%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20d%3D%22M4%2010a6%206%200%201%200%2012%200%206%206%200%201%200-12%200m5-3a1%201%200%201%200%202%200%201%201%200%201%200-2%200m0%203a1%201%200%201%201%202%200v3a1%201%200%201%201-2%200%22%2F%3E%3C%2Fsvg%3E");
+  background-image: var(--map-attrib-icon);
 }
 
-.dark .maplibregl-ctrl-attrib.maplibregl-compact-show .maplibregl-ctrl-attrib-button {
-  background-color: rgb(255 255 255 / 0.08);
+.maplibregl-ctrl.maplibregl-ctrl-attrib.maplibregl-compact-show .maplibregl-ctrl-attrib-button {
+  background-color: var(--map-attrib-active);
 }
 
 .maplibregl-ctrl-attrib-button:focus:not(:focus-visible) {
