@@ -5,6 +5,8 @@ export type DistanceUnit = (typeof distanceUnits)[number];
 
 // 距離の単位に対応する速度の単位
 export const speedUnitOf = { km: "kmh", mi: "mph" } as const satisfies Record<DistanceUnit, string>;
+export const temperatureUnitOf = { km: "celsius", mi: "fahrenheit" } as const satisfies Record<DistanceUnit, string>;
+export const windSpeedUnitOf = { km: "mps", mi: "mph" } as const satisfies Record<DistanceUnit, string>;
 
 export const defaultDistanceUnit: DistanceUnit = "km";
 export const DISTANCE_UNIT_STORAGE_KEY = "vertia.distanceUnit";
@@ -40,6 +42,16 @@ export function metersToUnit(meters: number, unit: DistanceUnit): number {
 // m/s を km/h または mph に換算する
 export function mpsToUnit(mps: number, unit: DistanceUnit): number {
   return (mps * 3600) / METERS_PER_UNIT[unit];
+}
+
+// 摂氏を華氏に換算する
+export function celsiusToUnit(celsius: number, unit: DistanceUnit): number {
+  return unit === "mi" ? celsius * 1.8 + 32 : celsius;
+}
+
+// 風速は距離の単位が km のとき m/s のまま、mi のとき mph に換算する
+export function windSpeedToUnit(mps: number, unit: DistanceUnit): number {
+  return unit === "mi" ? mpsToUnit(mps, unit) : mps;
 }
 
 function subscribe(onChange: () => void): () => void {

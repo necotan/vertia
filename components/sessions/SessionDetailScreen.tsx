@@ -9,15 +9,25 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
-import { db, type DriveSession, type SessionSummary } from "@/lib/db/schema";
+import { db, type DriveSession, type SessionSummary, type SessionWeather } from "@/lib/db/schema";
 import { deleteSession, getSessionGpsPoints } from "@/lib/db/sessionRepository";
 import { exportSessionFile, isTransferSupported } from "@/lib/db/sessionTransfer";
 import { formatDuration } from "@/lib/format";
-import { metersToUnit, mpsToUnit, speedUnitOf, useDistanceUnit } from "@/lib/units";
+import {
+  celsiusToUnit,
+  metersToUnit,
+  mpsToUnit,
+  speedUnitOf,
+  temperatureUnitOf,
+  useDistanceUnit,
+  windSpeedToUnit,
+  windSpeedUnitOf,
+} from "@/lib/units";
+import { weatherCodeKey } from "@/lib/weather/weatherCode";
 import { SessionMap } from "./SessionMap";
 import { SpeedChart } from "./SpeedChart";
 
-type StatItem = { label: string; value: string; unit?: string };
+type StatItem = { label: string; value: string; unit?: string; text?: boolean };
 
 function StatSection({ title, items }: { title: string; items: StatItem[] }) {
   return (
@@ -27,7 +37,7 @@ function StatSection({ title, items }: { title: string; items: StatItem[] }) {
         {items.map((item) => (
           <div key={item.label} className="flex flex-col gap-1">
             <dt className="text-xs text-muted-foreground">{item.label}</dt>
-            <dd className="font-mono text-lg">
+            <dd className={item.text ? "text-sm" : "font-mono text-lg"}>
               {item.value}
               {item.unit && <span className="ml-1 text-xs text-muted-foreground">{item.unit}</span>}
             </dd>
@@ -35,6 +45,38 @@ function StatSection({ title, items }: { title: string; items: StatItem[] }) {
         ))}
       </dl>
     </section>
+  );
+}
+
+function WeatherSection({ weather }: { weather: SessionWeather }) {
+  const t = useTranslations("weather");
+  const tUnits = useTranslations("units");
+  const format = useFormatter();
+  const unit = useDistanceUnit();
+  const oneDecimal = (value: number) =>
+    format.number(value, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+  return (
+    <StatSection
+      title={t("title")}
+      items={[
+        {
+          label: t("condition"),
+          value: t(`codes.${weatherCodeKey(weather.weatherCode)}`),
+          text: true,
+        },
+        {
+          label: t("temperature"),
+          value: oneDecimal(celsiusToUnit(weather.temperatureC, unit)),
+          unit: tUnits(temperatureUnitOf[unit]),
+        },
+        {
+          label: t("wind"),
+          value: oneDecimal(windSpeedToUnit(weather.windSpeedMps, unit)),
+          unit: tUnits(windSpeedUnitOf[unit]),
+        },
+      ]}
+    />
   );
 }
 
@@ -155,6 +197,7 @@ export function SessionDetailScreen() {
       {session && !session.summary && (
         <p className="text-sm text-muted-foreground">{t("detail.noSummary")}</p>
       )}
+      {session?.weather && <WeatherSection weather={session.weather} />}
       {session?.summary && <SummarySections summary={session.summary} />}
 
       {session && (

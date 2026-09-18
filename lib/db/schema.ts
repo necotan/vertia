@@ -15,6 +15,19 @@ export interface SessionSummary {
   maxLongitudinalG: number;
 }
 
+// 記録開始時点の天気（換算は表示時に行うため、値は SI 単位のまま保存する）
+export interface SessionWeather {
+  // API が返した観測時刻
+  observedAt: number;
+  // WMO weather code
+  weatherCode: number;
+  temperatureC: number;
+  windSpeedMps: number;
+  // 取得に使用した座標
+  lat: number;
+  lng: number;
+}
+
 export interface SessionCalibration {
   // 停車中に平均した accelerationIncludingGravity（端末座標系、m/s²）
   gravity: Vec3;
@@ -29,6 +42,8 @@ export interface DriveSession {
   updatedAt: number;
   calibration: SessionCalibration;
   summary: SessionSummary | null;
+  // 取得できなかった場合と、天気の保存に対応する前の記録は null
+  weather: SessionWeather | null;
   schemaVersion: number;
 }
 
@@ -63,7 +78,7 @@ export interface MotionChunk {
   rg: Float32Array | null;
 }
 
-export const SESSION_SCHEMA_VERSION = 1;
+export const SESSION_SCHEMA_VERSION = 2;
 
 class VertiaDatabase extends Dexie {
   sessions!: EntityTable<DriveSession, "id">;
@@ -77,6 +92,17 @@ class VertiaDatabase extends Dexie {
       gpsPoints: "++id, sessionId, [sessionId+t]",
       motionChunks: "++id, sessionId, [sessionId+seq]",
     });
+    // weather はインデックスを張らないためストア定義は変えず、既存の記録に null を入れる
+    this.version(2)
+      .stores({})
+      .upgrade((tx) =>
+        tx
+          .table<DriveSession>("sessions")
+          .toCollection()
+          .modify((session) => {
+            session.weather = null;
+          }),
+      );
   }
 }
 

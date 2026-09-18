@@ -7,11 +7,13 @@ import {
   type MotionChunk,
   type SessionStatus,
   type SessionSummary,
+  type SessionWeather,
   type Vec3,
 } from "./schema";
 
 const FILE_FORMAT = "vertia-session";
-const FILE_VERSION = 1;
+const FILE_VERSION = 2;
+const SUPPORTED_FILE_VERSIONS: readonly number[] = [1, 2];
 
 interface EncodedMotionChunk {
   seq: number;
@@ -165,11 +167,20 @@ const SUMMARY_KEYS = [
   "maxLateralG",
   "maxLongitudinalG",
 ] as const satisfies readonly (keyof SessionSummary)[];
+const WEATHER_KEYS = [
+  "observedAt",
+  "weatherCode",
+  "temperatureC",
+  "windSpeedMps",
+  "lat",
+  "lng",
+] as const satisfies readonly (keyof SessionWeather)[];
 
 function parseSessionFile(
   value: unknown,
 ): { session: DriveSession; gpsPoints: GpsPoint[]; motionChunks: MotionChunk[] } | null {
-  if (!isObject(value) || value.format !== FILE_FORMAT || value.version !== FILE_VERSION) return null;
+  if (!isObject(value) || value.format !== FILE_FORMAT) return null;
+  if (!isNumber(value.version) || !SUPPORTED_FILE_VERSIONS.includes(value.version)) return null;
   const session = parseSession(value.session);
   if (!session || !Array.isArray(value.gpsPoints) || !Array.isArray(value.motionChunks)) return null;
 
@@ -190,7 +201,7 @@ function parseSessionFile(
 
 function parseSession(value: unknown): DriveSession | null {
   if (!isObject(value)) return null;
-  const { id, status, startedAt, endedAt, updatedAt, calibration, summary, schemaVersion } = value;
+  const { id, status, startedAt, endedAt, updatedAt, calibration, summary, weather, schemaVersion } = value;
   if (typeof id !== "string" || id === "") return null;
   const knownStatus = SESSION_STATUSES.find((s) => s === status);
   if (!knownStatus) return null;
@@ -213,6 +224,9 @@ function parseSession(value: unknown): DriveSession | null {
     >;
   }
 
+  const parsedWeather = parseWeather(weather);
+  if (parsedWeather === undefined) return null;
+
   return {
     id,
     status: knownStatus,
@@ -221,8 +235,21 @@ function parseSession(value: unknown): DriveSession | null {
     updatedAt,
     calibration: { gravity: vec },
     summary: parsedSummary,
+    weather: parsedWeather,
     schemaVersion,
   };
+}
+
+// 値が壊れている場合だけ undefined を返す（天気を持たない version 1 のファイルは null になる）
+function parseWeather(value: unknown): SessionWeather | null | undefined {
+  if (value === null || value === undefined) return null;
+  if (!isObject(value)) return undefined;
+  const values = WEATHER_KEYS.map((key) => value[key]);
+  if (!values.every(isNumber)) return undefined;
+  return Object.fromEntries(WEATHER_KEYS.map((key, i) => [key, values[i]])) as Record<
+    (typeof WEATHER_KEYS)[number],
+    number
+  >;
 }
 
 function parseGpsPoint(value: unknown, sessionId: string): GpsPoint | null {

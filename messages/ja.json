@@ -149,10 +149,37 @@
       "saveFailed": "記録の保存に失敗しました"
     }
   },
+  "weather": {
+    "title": "天気",
+    "condition": "天気",
+    "temperature": "気温",
+    "wind": "風速",
+    "codes": {
+      "clear": "快晴",
+      "mainlyClear": "晴れ",
+      "partlyCloudy": "晴れ時々くもり",
+      "overcast": "くもり",
+      "fog": "霧",
+      "drizzle": "霧雨",
+      "freezingDrizzle": "着氷性の霧雨",
+      "rain": "雨",
+      "freezingRain": "着氷性の雨",
+      "snow": "雪",
+      "snowGrains": "霧雪",
+      "showers": "にわか雨",
+      "snowShowers": "にわか雪",
+      "thunderstorm": "雷雨",
+      "thunderstormHail": "ひょうを伴う雷雨",
+      "unknown": "不明"
+    }
+  },
   "units": {
     "km": "km",
     "mi": "mi",
     "kmh": "km/h",
-    "mph": "mph"
+    "mph": "mph",
+    "mps": "m/s",
+    "celsius": "°C",
+    "fahrenheit": "°F"
   }
 }

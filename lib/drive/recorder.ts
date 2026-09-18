@@ -1,5 +1,5 @@
-import { appendSessionData, completeSession, createSession } from "@/lib/db/sessionRepository";
-import type { GpsPoint, MotionChunk, SessionCalibration, SessionSummary } from "@/lib/db/schema";
+import { appendSessionData, completeSession, createSession, setSessionWeather } from "@/lib/db/sessionRepository";
+import type { GpsPoint, MotionChunk, SessionCalibration, SessionSummary, SessionWeather } from "@/lib/db/schema";
 import type { GeoFix } from "@/lib/sensors/geolocation";
 import type { MotionSample } from "@/lib/sensors/motion";
 
@@ -23,6 +23,7 @@ export class SessionRecorder {
   private timer: number | null = null;
   private flushing: Promise<void> = Promise.resolve();
   private errorReported = false;
+  private weatherSaved = false;
 
   private constructor(
     readonly sessionId: string,
@@ -47,6 +48,15 @@ export class SessionRecorder {
 
   addMotion(sample: MotionSample): void {
     this.motionBuffer.push(sample);
+  }
+
+  // 記録開始時の天気を1度だけ書き込む（失敗しても記録は続けるため、次の取得で再試行する）
+  setWeather(weather: SessionWeather): void {
+    if (this.weatherSaved) return;
+    this.weatherSaved = true;
+    void setSessionWeather(this.sessionId, weather).catch(() => {
+      this.weatherSaved = false;
+    });
   }
 
   async stop(endedAt: number, summary: SessionSummary): Promise<void> {
