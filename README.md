@@ -1,6 +1,26 @@
-# vertia
+<h1 align="center">vertia</h1>
 
-スマートフォンをダッシュボードに固定し、GPS と加速度センサーで速度と加速度（G）をリアルタイムに表示する、個人利用メインのWebアプリケーションです。
+<p align="center">
+  <img src="assets/vertia-icon-readme.png" width="120" alt="vertia">
+</p>
+
+<p align="center">
+  A web app that displays and records speed and G-force in real time<br>
+  using your smartphone's GPS and motion sensors.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-App%20Router-000000?logo=nextdotjs&logoColor=white">
+  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white">
+  <img src="https://img.shields.io/badge/Tailwind%20CSS-v4-06B6D4?logo=tailwindcss&logoColor=white">
+  <img src="https://img.shields.io/badge/MapLibre-GL%20JS-396CB2?logo=maplibre&logoColor=white">
+  <br>
+  <img src="https://img.shields.io/badge/PWA-Ready-5A0FC8?logo=pwa&logoColor=white">
+  <img src="https://img.shields.io/badge/Platform-iOS%20%7C%20Android-555555?logo=apple&logoColor=white">
+  <img src="https://img.shields.io/badge/Data-Local%20Only-E05D44">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green"></a>
+  <a href="https://vertia-app.vercel.app"><img src="https://img.shields.io/badge/Demo-Vercel-000000?logo=vercel&logoColor=white"></a>
+</p>
 
 ## クイックスタート
 セットアップ不要で、ブラウザからすぐに試せます。走行画面は、GPS とモーションセンサーを備えた端末（主にスマートフォン）で開いてください。
