@@ -18,18 +18,18 @@ export const SPEED_PALETTES = {
     "#9e3737",
     "#a844b5",
   ],
-  // 淡い色はライトの地図の白い縁取りに、濃い紺はダークの地図の黒い縁取りに埋もれるため、両端を中間の明るさに寄せる
+
   blue: [
-    "#8fd3f4",
-    "#6cc3ee",
-    "#4cb0e6",
-    "#3399dc",
-    "#2683cf",
-    "#1f6dc0",
-    "#2059b3",
-    "#2a47a6",
-    "#3a3a9c",
-    "#4a2f94",
+    "#69f3d3",
+    "#1cd0dd",
+    "#13b5de",
+    "#319cd9",
+    "#4685ce",
+    "#546ec0",
+    "#5c5aae",
+    "#60479a",
+    "#613583",
+    "#5f246c",
   ],
 } as const satisfies Record<SpeedPaletteId, readonly string[]>;
 
