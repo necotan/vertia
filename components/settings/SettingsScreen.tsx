@@ -3,11 +3,13 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { locales, saveLocale } from "@/lib/i18n/config";
+import { saveSpeedPalette, useSpeedPalette } from "@/lib/routeColorMode";
+import { SPEED_PALETTES, speedPaletteIds } from "@/lib/routeSpeed";
 import { distanceUnits, saveDistanceUnit, useDistanceUnit } from "@/lib/units";
 
 const themes = ["system", "light", "dark"] as const;
 
-type Option = { value: string; label: string };
+type Option = { value: string; label: string; colors?: readonly string[] };
 
 function SegmentedControl({
   label,
@@ -32,12 +34,19 @@ function SegmentedControl({
               type="button"
               aria-pressed={selected}
               onClick={() => onChange(option.value)}
-              className={`min-h-11 rounded-full px-5 text-sm font-medium transition-colors ${
+              className={`flex min-h-11 items-center gap-2 rounded-full px-5 text-sm font-medium transition-colors ${
                 selected
                   ? "bg-primary text-primary-foreground"
                   : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
               }`}
             >
+              {option.colors && (
+                <span aria-hidden className="flex h-2 w-10 overflow-hidden rounded-full">
+                  {option.colors.map((color) => (
+                    <span key={color} className="flex-1" style={{ backgroundColor: color }} />
+                  ))}
+                </span>
+              )}
               {option.label}
             </button>
           );
@@ -53,6 +62,7 @@ export function SettingsScreen() {
   const locale = useLocale();
   const { theme, setTheme } = useTheme();
   const distanceUnit = useDistanceUnit();
+  const speedPalette = useSpeedPalette();
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-8 px-4 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-[calc(env(safe-area-inset-top)+2.5rem)] sm:px-6">
@@ -82,6 +92,20 @@ export function SettingsScreen() {
         onChange={(value) => {
           const next = distanceUnits.find((u) => u === value);
           if (next) saveDistanceUnit(next);
+        }}
+      />
+
+      <SegmentedControl
+        label={t("speedPalette")}
+        options={speedPaletteIds.map((value) => ({
+          value,
+          label: t(`speedPaletteOptions.${value}`),
+          colors: SPEED_PALETTES[value],
+        }))}
+        value={speedPalette}
+        onChange={(value) => {
+          const next = speedPaletteIds.find((p) => p === value);
+          if (next) saveSpeedPalette(next);
         }}
       />
     </main>

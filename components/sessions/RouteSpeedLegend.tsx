@@ -1,14 +1,16 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { SPEED_BAND_COLORS, SPEED_LEGEND_TICKS, speedBandBoundary } from "@/lib/routeSpeed";
+import { useSpeedPalette } from "@/lib/routeColorMode";
+import { SPEED_LEGEND_TICKS, SPEED_PALETTES, speedBandBoundary } from "@/lib/routeSpeed";
 import { speedUnitOf, useDistanceUnit } from "@/lib/units";
 
 export function RouteSpeedLegend({ className }: { className: string }) {
   const t = useTranslations("sessions.detail.map.speedColors");
   const tUnits = useTranslations("units");
   const unit = useDistanceUnit();
-  const lastIndex = SPEED_BAND_COLORS.length - 1;
+  const colors = SPEED_PALETTES[useSpeedPalette()];
+  const lastIndex = colors.length - 1;
 
   return (
     <div
@@ -17,7 +19,7 @@ export function RouteSpeedLegend({ className }: { className: string }) {
       className={`pointer-events-none rounded-lg border border-border bg-background/90 px-2.5 pb-1 pt-2 text-foreground backdrop-blur-md ${className}`}
     >
       <div className="flex w-36 overflow-hidden rounded-full">
-        {SPEED_BAND_COLORS.map((color) => (
+        {colors.map((color) => (
           <span key={color} className="h-1.5 flex-1" style={{ backgroundColor: color }} />
         ))}
       </div>
@@ -26,7 +28,7 @@ export function RouteSpeedLegend({ className }: { className: string }) {
           <span
             key={index}
             className={`absolute top-0 ${index === 0 ? "" : "-translate-x-1/2"}`}
-            style={{ left: `${(index / SPEED_BAND_COLORS.length) * 100}%` }}
+            style={{ left: `${(index / colors.length) * 100}%` }}
           >
             {speedBandBoundary(unit, index)}
             {index === lastIndex && "+"}

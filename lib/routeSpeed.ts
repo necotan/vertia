@@ -2,18 +2,36 @@ import type { GpsPoint } from "@/lib/db/schema";
 import { GPS_ACCURACY_LIMIT_M, resolveSpeed } from "@/lib/drive/liveStats";
 import { type DistanceUnit, mpsToUnit } from "@/lib/units";
 
-export const SPEED_BAND_COLORS = [
-  "#4870c8",
-  "#3496c3",
-  "#319b90",
-  "#3fa866",
-  "#9bc754",
-  "#d2b43d",
-  "#d17a3e",
-  "#d16262",
-  "#9e3737",
-  "#a844b5",
-] as const;
+export const speedPaletteIds = ["standard", "blue"] as const;
+export type SpeedPaletteId = (typeof speedPaletteIds)[number];
+
+export const SPEED_PALETTES = {
+  standard: [
+    "#4870c8",
+    "#3496c3",
+    "#319b90",
+    "#3fa866",
+    "#9bc754",
+    "#d2b43d",
+    "#d17a3e",
+    "#d16262",
+    "#9e3737",
+    "#a844b5",
+  ],
+  // 淡い色はライトの地図の白い縁取りに、濃い紺はダークの地図の黒い縁取りに埋もれるため、両端を中間の明るさに寄せる
+  blue: [
+    "#8fd3f4",
+    "#6cc3ee",
+    "#4cb0e6",
+    "#3399dc",
+    "#2683cf",
+    "#1f6dc0",
+    "#2059b3",
+    "#2a47a6",
+    "#3a3a9c",
+    "#4a2f94",
+  ],
+} as const satisfies Record<SpeedPaletteId, readonly string[]>;
 
 export const SPEED_BAND_THRESHOLDS: Record<DistanceUnit, readonly number[]> = {
   km: [20, 40, 60, 80, 100, 120, 140, 160, 180],
@@ -55,7 +73,11 @@ function smoothSpeeds(speeds: (number | null)[]): number[] {
 }
 
 // 同じ速度帯が続く区間を1本の線にまとめる
-export function buildSpeedSegments(points: GpsPoint[], unit: DistanceUnit): SpeedSegments {
+export function buildSpeedSegments(
+  points: GpsPoint[],
+  unit: DistanceUnit,
+  colors: readonly string[],
+): SpeedSegments {
   const accepted = points.filter((p) => p.accuracy <= GPS_ACCURACY_LIMIT_M);
   const speeds = smoothSpeeds(accepted.map((point, index) => resolveSpeed(accepted[index - 1] ?? null, point)));
   const features: SpeedSegments["features"] = [];
@@ -72,7 +94,7 @@ export function buildSpeedSegments(points: GpsPoint[], unit: DistanceUnit): Spee
     current = { band, coordinates: [from, to] };
     features.push({
       type: "Feature",
-      properties: { color: SPEED_BAND_COLORS[band] },
+      properties: { color: colors[band] },
       geometry: { type: "LineString", coordinates: current.coordinates },
     });
   }

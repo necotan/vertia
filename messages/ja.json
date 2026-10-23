@@ -114,6 +114,11 @@
     "distanceUnitOptions": {
       "km": "キロメートル",
       "mi": "マイル"
+    },
+    "speedPalette": "地図の速度の色",
+    "speedPaletteOptions": {
+      "standard": "標準",
+      "blue": "ブルー"
     }
   },
   "languageOptions": {
