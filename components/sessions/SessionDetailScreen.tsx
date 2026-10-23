@@ -33,11 +33,11 @@ function StatSection({ title, items }: { title: string; items: StatItem[] }) {
   return (
     <section className="flex flex-col gap-3">
       <h2 className="text-sm font-semibold text-muted-foreground">{title}</h2>
-      <dl className="grid grid-cols-3 gap-2 rounded-2xl border border-border bg-card p-4">
+      <dl className="grid grid-flow-col grid-cols-3 grid-rows-[auto_auto] gap-x-2 gap-y-1 rounded-2xl border border-border bg-card p-4">
         {items.map((item) => (
-          <div key={item.label} className="flex flex-col gap-1">
+          <div key={item.label} className="contents">
             <dt className="text-xs text-muted-foreground">{item.label}</dt>
-            <dd className={item.text ? "text-sm" : "font-mono text-lg"}>
+            <dd className={`self-baseline ${item.text ? "text-sm" : "font-mono text-lg"}`}>
               {item.value}
               {item.unit && <span className="ml-1 text-xs text-muted-foreground">{item.unit}</span>}
             </dd>
