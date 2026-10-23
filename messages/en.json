@@ -114,6 +114,11 @@
     "distanceUnitOptions": {
       "km": "Kilometers",
       "mi": "Miles"
+    },
+    "speedPalette": "Map speed colors",
+    "speedPaletteOptions": {
+      "standard": "Standard",
+      "blue": "Blue"
     }
   },
   "languageOptions": {

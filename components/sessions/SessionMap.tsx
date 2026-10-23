@@ -16,8 +16,8 @@ import { BottomSheet } from "@/components/ui/BottomSheet";
 import type { GpsPoint } from "@/lib/db/schema";
 import { GPS_ACCURACY_LIMIT_M } from "@/lib/drive/liveStats";
 import { MAP_STYLES, type MapStyleId, saveMapStyle, themeMapStyle, useSavedMapStyle } from "@/lib/mapStyles";
-import { saveRouteSpeedColors, useRouteSpeedColors } from "@/lib/routeColorMode";
-import { buildSpeedSegments, type SpeedSegments } from "@/lib/routeSpeed";
+import { saveRouteSpeedColors, useRouteSpeedColors, useSpeedPalette } from "@/lib/routeColorMode";
+import { buildSpeedSegments, SPEED_PALETTES, type SpeedSegments } from "@/lib/routeSpeed";
 import { useDistanceUnit } from "@/lib/units";
 import { MapStylePicker } from "./MapStylePicker";
 import { RouteSpeedLegend } from "./RouteSpeedLegend";
@@ -158,6 +158,7 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
   const [styleSheetOpen, setStyleSheetOpen] = useState(false);
   const savedStyle = useSavedMapStyle();
   const speedColors = useRouteSpeedColors();
+  const speedPalette = useSpeedPalette();
   const unit = useDistanceUnit();
   const mapRef = useRef<MapLibreMap | null>(null);
   const boundsRef = useRef<LngLatBounds | null>(null);
@@ -170,7 +171,10 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
     () => points.filter((p) => p.accuracy <= GPS_ACCURACY_LIMIT_M).map((p) => [p.lng, p.lat]),
     [points],
   );
-  const speedSegments = useMemo(() => buildSpeedSegments(points, unit), [points, unit]);
+  const speedSegments = useMemo(
+    () => buildSpeedSegments(points, unit, SPEED_PALETTES[speedPalette]),
+    [points, unit, speedPalette],
+  );
   // 地図を作り直さずに切り替えるため、ルートの描画ではその時点の値を参照する
   const speedSegmentsRef = useRef(speedSegments);
   const speedColorsRef = useRef(speedColors);
