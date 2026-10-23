@@ -161,15 +161,15 @@
       "overcast": "Overcast",
       "fog": "Fog",
       "drizzle": "Drizzle",
-      "freezingDrizzle": "Freezing drizzle",
+      "freezingDrizzle": "Frz. drizzle",
       "rain": "Rain",
       "freezingRain": "Freezing rain",
       "snow": "Snow",
       "snowGrains": "Snow grains",
-      "showers": "Rain showers",
+      "showers": "Showers",
       "snowShowers": "Snow showers",
       "thunderstorm": "Thunderstorm",
-      "thunderstormHail": "Thunderstorm with hail",
+      "thunderstormHail": "T-storm & hail",
       "unknown": "Unknown"
     }
   },
