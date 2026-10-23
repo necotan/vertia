@@ -157,19 +157,19 @@
     "codes": {
       "clear": "快晴",
       "mainlyClear": "晴れ",
-      "partlyCloudy": "晴れ時々くもり",
+      "partlyCloudy": "晴れ時々曇",
       "overcast": "くもり",
       "fog": "霧",
       "drizzle": "霧雨",
-      "freezingDrizzle": "着氷性の霧雨",
+      "freezingDrizzle": "凍る霧雨",
       "rain": "雨",
-      "freezingRain": "着氷性の雨",
+      "freezingRain": "凍る雨",
       "snow": "雪",
       "snowGrains": "霧雪",
       "showers": "にわか雨",
       "snowShowers": "にわか雪",
       "thunderstorm": "雷雨",
-      "thunderstormHail": "ひょうを伴う雷雨",
+      "thunderstormHail": "雷雨・ひょう",
       "unknown": "不明"
     }
   },
