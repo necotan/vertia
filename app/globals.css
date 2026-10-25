@@ -15,6 +15,8 @@
   --primary-foreground: #fafafa;
   --secondary: #f5f5f5;
   --secondary-foreground: #171717;
+  --destructive: oklch(0.577 0.21 27.325);
+  --destructive-hover: oklch(0.505 0.18 27.518);
   --skeleton: #f0f0f0;
   --skeleton-shimmer: rgb(255 255 255 / 0.65);
   --map-attrib-icon: url("data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20fill-rule%3D%22evenodd%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20d%3D%22M4%2010a6%206%200%201%200%2012%200%206%206%200%201%200-12%200m5-3a1%201%200%201%200%202%200%201%201%200%201%200-2%200m0%203a1%201%200%201%201%202%200v3a1%201%200%201%201-2%200%22%2F%3E%3C%2Fsvg%3E");
@@ -49,6 +51,8 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-hover: var(--destructive-hover);
   --font-sans: var(--font-geist-sans), var(--font-noto-sans-jp), "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
   --font-mono: var(--font-chivo-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --animate-toast-in: toast-in 200ms ease-out;
