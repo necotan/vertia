@@ -1,16 +1,16 @@
 "use client";
 
-import { ChevronLeft, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
-import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { BackLink } from "@/components/ui/BackLink";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { recoverInterruptedSessions } from "@/lib/db/sessionRepository";
 import { DriveController, initialDriveUiState, type DriveUiState } from "@/lib/drive/DriveController";
 import { DriveRenderer } from "@/lib/drive/renderer/DriveRenderer";
-import { TOP_BAR_Y } from "@/lib/drive/renderer/layout";
+import { TOP_BAR_H, TOP_BAR_Y } from "@/lib/drive/renderer/layout";
 import { setDrivePalette, type DriveLabels, type Rect } from "@/lib/drive/renderer/types";
 import { speedUnitOf, useDistanceUnit } from "@/lib/units";
 
@@ -101,14 +101,9 @@ export function DriveScreen() {
         <canvas ref={canvasRef} className="absolute inset-0 block size-full touch-none" />
 
         {canLeave && (
-          <Link
-            href="/"
-            aria-label={tCommon("back")}
-            style={{ top: TOP_BAR_Y }}
-            className="absolute left-2 flex size-11 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
-          >
-            <ChevronLeft className="size-6" />
-          </Link>
+          <div style={{ top: TOP_BAR_Y, height: TOP_BAR_H }} className="absolute left-2 flex items-center">
+            <BackLink href="/" label={tCommon("back")} />
+          </div>
         )}
 
         {message && hintRect !== null && (
