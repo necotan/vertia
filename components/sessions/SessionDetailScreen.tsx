@@ -1,11 +1,10 @@
 "use client";
 
 import { useLiveQuery } from "dexie-react-hooks";
-import { ChevronLeft } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { BackLink } from "@/components/ui/BackLink";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
@@ -171,13 +170,7 @@ export function SessionDetailScreen() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-8 px-4 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-[calc(env(safe-area-inset-top)+2.5rem)] sm:px-6">
       <div className="flex flex-col gap-2">
-        <Link
-          href="/sessions"
-          aria-label={tCommon("back")}
-          className="-ml-3 -mt-2 mb-2 flex size-11 items-center justify-center rounded-full text-foreground hover:bg-muted"
-        >
-          <ChevronLeft className="size-6" />
-        </Link>
+        <BackLink href="/sessions" label={tCommon("back")} className="mb-2" />
         {session && (
           <h1 className="text-2xl font-bold">
             {format.dateTime(session.startedAt, { dateStyle: "medium", timeStyle: "short" })}
