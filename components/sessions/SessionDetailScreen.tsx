@@ -207,7 +207,7 @@ export function SessionDetailScreen() {
               {exporting ? t("detail.export.exporting") : t("detail.export.button")}
             </Button>
           )}
-          <Button variant="danger" onClick={() => setConfirmOpen(true)} disabled={deleting}>
+          <Button variant="destructive" onClick={() => setConfirmOpen(true)} disabled={deleting}>
             {t("detail.delete.button")}
           </Button>
         </div>
