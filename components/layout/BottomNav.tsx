@@ -49,7 +49,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label={t("label")}
-      className="absolute bottom-9 left-1/2 z-50 h-16 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-full border border-border bg-background/90 backdrop-blur-md"
+      className="absolute bottom-9 left-1/2 z-50 h-16 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-full border border-slate-300 bg-card/75 shadow-lg backdrop-blur-xl backdrop-saturate-150 dark:border-border"
     >
       <div className="flex h-full items-center justify-around">
         {navItems.map((item) => {
