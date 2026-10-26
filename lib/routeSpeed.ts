@@ -2,23 +2,10 @@ import type { GpsPoint } from "@/lib/db/schema";
 import { GPS_ACCURACY_LIMIT_M, resolveSpeed } from "@/lib/drive/liveStats";
 import { type DistanceUnit, mpsToUnit } from "@/lib/units";
 
-export const speedPaletteIds = ["standard", "blue"] as const;
+export const speedPaletteIds = ["blue", "standard"] as const;
 export type SpeedPaletteId = (typeof speedPaletteIds)[number];
 
 export const SPEED_PALETTES = {
-  standard: [
-    "#4870c8",
-    "#3496c3",
-    "#319b90",
-    "#3fa866",
-    "#9bc754",
-    "#d2b43d",
-    "#d17a3e",
-    "#d16262",
-    "#9e3737",
-    "#a844b5",
-  ],
-
   blue: [
     "#69f3d3",
     "#1cd0dd",
@@ -30,6 +17,19 @@ export const SPEED_PALETTES = {
     "#60479a",
     "#613583",
     "#5f246c",
+  ],
+
+  standard: [
+    "#4870c8",
+    "#3496c3",
+    "#319b90",
+    "#3fa866",
+    "#9bc754",
+    "#d2b43d",
+    "#d17a3e",
+    "#d16262",
+    "#9e3737",
+    "#a844b5",
   ],
 } as const satisfies Record<SpeedPaletteId, readonly string[]>;
 
