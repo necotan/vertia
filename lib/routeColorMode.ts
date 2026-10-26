@@ -42,7 +42,7 @@ export function useRouteSpeedColors(): boolean {
 
 export const SPEED_PALETTE_STORAGE_KEY = "vertia.speedPalette";
 const SPEED_PALETTE_CHANGE_EVENT = "vertia:speed-palette-change";
-export const defaultSpeedPalette: SpeedPaletteId = "standard";
+export const defaultSpeedPalette: SpeedPaletteId = "blue";
 
 export function isSpeedPaletteId(value: unknown): value is SpeedPaletteId {
   return typeof value === "string" && (speedPaletteIds as readonly string[]).includes(value);

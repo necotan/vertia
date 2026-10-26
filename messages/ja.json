@@ -117,8 +117,8 @@
     },
     "speedPalette": "地図の速度の色",
     "speedPaletteOptions": {
-      "standard": "標準",
-      "blue": "ブルー"
+      "blue": "ブルー",
+      "standard": "カラフル"
     }
   },
   "languageOptions": {

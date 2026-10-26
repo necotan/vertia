@@ -117,8 +117,8 @@
     },
     "speedPalette": "Map speed colors",
     "speedPaletteOptions": {
-      "standard": "Standard",
-      "blue": "Blue"
+      "blue": "Blue",
+      "standard": "Colorful"
     }
   },
   "languageOptions": {
