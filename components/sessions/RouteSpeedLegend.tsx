@@ -5,7 +5,7 @@ import { useSpeedPalette } from "@/lib/routeColorMode";
 import { SPEED_LEGEND_TICKS, SPEED_PALETTES, speedBandBoundary } from "@/lib/routeSpeed";
 import { speedUnitOf, useDistanceUnit } from "@/lib/units";
 
-export function RouteSpeedLegend({ className }: { className: string }) {
+export function RouteSpeedLegend({ thresholds, className }: { thresholds: readonly number[]; className: string }) {
   const t = useTranslations("sessions.detail.map.speedColors");
   const tUnits = useTranslations("units");
   const unit = useDistanceUnit();
@@ -30,7 +30,7 @@ export function RouteSpeedLegend({ className }: { className: string }) {
             className={`absolute top-0 ${index === 0 ? "" : "-translate-x-1/2"}`}
             style={{ left: `${(index / colors.length) * 100}%` }}
           >
-            {speedBandBoundary(unit, index)}
+            {speedBandBoundary(thresholds, index)}
             {index === lastIndex && "+"}
           </span>
         ))}

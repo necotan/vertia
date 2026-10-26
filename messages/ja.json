@@ -119,6 +119,11 @@
     "speedPaletteOptions": {
       "blue": "ブルー",
       "standard": "カラフル"
+    },
+    "speedScale": "速度の色の基準",
+    "speedScaleOptions": {
+      "relative": "記録の最高速度",
+      "absolute": "固定の速度"
     }
   },
   "languageOptions": {
