@@ -4,7 +4,6 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { Gauge, Layers, Map as MapIcon, Maximize2, Minimize2 } from "lucide-react";
 import type {
   FitBoundsOptions,
-  GeoJSONSource,
   LngLatBounds,
   Map as MapLibreMap,
   TransformStyleFunction,
@@ -17,7 +16,7 @@ import type { GpsPoint } from "@/lib/db/schema";
 import { GPS_ACCURACY_LIMIT_M } from "@/lib/drive/liveStats";
 import { MAP_STYLES, type MapStyleId, saveMapStyle, themeMapStyle, useSavedMapStyle } from "@/lib/mapStyles";
 import { saveRouteSpeedColors, useRouteSpeedColors, useSpeedPalette, useSpeedScale } from "@/lib/routeColorMode";
-import { buildSpeedSegments, SPEED_PALETTES, type SpeedSegments } from "@/lib/routeSpeed";
+import { buildSpeedGradient, SPEED_PALETTES, type SpeedGradient } from "@/lib/routeSpeed";
 import { useDistanceUnit } from "@/lib/units";
 import { MapStylePicker } from "./MapStylePicker";
 import { RouteSpeedLegend } from "./RouteSpeedLegend";
@@ -53,7 +52,7 @@ type Visibility = "visible" | "none";
 
 type RouteData = {
   coordinates: Coordinate[];
-  speedSegments: SpeedSegments;
+  speedGradient: SpeedGradient;
   speedColors: boolean;
 };
 
@@ -62,7 +61,7 @@ function routeVisibility(speedColors: boolean): { line: Visibility; speed: Visib
 }
 
 // ルートと始点・終点を描くためのソースとレイヤー
-function buildRouteStyle({ coordinates, speedSegments, speedColors }: RouteData, darkStyle: boolean): RouteStyle {
+function buildRouteStyle({ coordinates, speedGradient, speedColors }: RouteData, darkStyle: boolean): RouteStyle {
   const colors = ROUTE_COLORS[darkStyle ? "dark" : "light"];
   const visibility = routeVisibility(speedColors);
   return {
@@ -70,8 +69,9 @@ function buildRouteStyle({ coordinates, speedSegments, speedColors }: RouteData,
       route: {
         type: "geojson",
         data: { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates } },
+        // 速度の色を line-gradient で付けるため、線の始点からの割合を使えるようにする
+        lineMetrics: true,
       },
-      "route-speed": { type: "geojson", data: speedSegments },
       endpoints: {
         type: "geojson",
         data: {
@@ -105,16 +105,9 @@ function buildRouteStyle({ coordinates, speedSegments, speedColors }: RouteData,
       {
         id: "route-speed-line",
         type: "line",
-        source: "route-speed",
-        // 色の境目が丸く重ならないよう、区間の端は平らにする
-        // 区間は次の区間と一部重なるため、後の区間ほど上に描く
-        layout: {
-          "line-join": "round",
-          "line-cap": "butt",
-          "line-sort-key": ["get", "order"],
-          visibility: visibility.speed,
-        },
-        paint: { "line-color": ["get", "color"], "line-width": 4 },
+        source: "route",
+        layout: { "line-join": "round", "line-cap": "round", visibility: visibility.speed },
+        paint: { "line-gradient": speedGradient, "line-width": 4 },
       },
       {
         id: "endpoints",
@@ -180,17 +173,17 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
     [points],
   );
   const speedRoute = useMemo(
-    () => buildSpeedSegments(points, unit, SPEED_PALETTES[speedPalette], speedScale),
+    () => buildSpeedGradient(points, unit, SPEED_PALETTES[speedPalette], speedScale),
     [points, unit, speedPalette, speedScale],
   );
-  const speedSegments = speedRoute.segments;
+  const speedGradient = speedRoute.gradient;
   // 地図を作り直さずに切り替えるため、ルートの描画ではその時点の値を参照する
-  const speedSegmentsRef = useRef(speedSegments);
+  const speedGradientRef = useRef(speedGradient);
   const speedColorsRef = useRef(speedColors);
   const getRouteStyle = useCallback(
     (darkStyle: boolean) =>
       buildRouteStyle(
-        { coordinates, speedSegments: speedSegmentsRef.current, speedColors: speedColorsRef.current },
+        { coordinates, speedGradient: speedGradientRef.current, speedColors: speedColorsRef.current },
         darkStyle,
       ),
     [coordinates],
@@ -294,17 +287,17 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
   }, [coordinates, theme, locale, online, getRouteStyle]);
 
   useEffect(() => {
-    speedSegmentsRef.current = speedSegments;
+    speedGradientRef.current = speedGradient;
     speedColorsRef.current = speedColors;
     const map = mapRef.current;
     if (!map) return;
     // 読み込み前やスタイルの切り替え中は、ルートを追加するときに最新の値が反映される
-    void map.getSource<GeoJSONSource>("route-speed")?.setData(speedSegments);
     if (!map.getLayer("route-line") || !map.getLayer("route-speed-line")) return;
+    map.setPaintProperty("route-speed-line", "line-gradient", speedGradient);
     const visibility = routeVisibility(speedColors);
     map.setLayoutProperty("route-line", "visibility", visibility.line);
     map.setLayoutProperty("route-speed-line", "visibility", visibility.speed);
-  }, [speedSegments, speedColors]);
+  }, [speedGradient, speedColors]);
 
   useEffect(() => {
     isFullscreenRef.current = isFullscreen;
