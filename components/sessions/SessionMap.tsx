@@ -106,7 +106,14 @@ function buildRouteStyle({ coordinates, speedSegments, speedColors }: RouteData,
         id: "route-speed-line",
         type: "line",
         source: "route-speed",
-        layout: { "line-join": "round", "line-cap": "round", visibility: visibility.speed },
+        // 色の境目が丸く重ならないよう、区間の端は平らにする
+        // 区間は次の区間と一部重なるため、後の区間ほど上に描く
+        layout: {
+          "line-join": "round",
+          "line-cap": "butt",
+          "line-sort-key": ["get", "order"],
+          visibility: visibility.speed,
+        },
         paint: { "line-color": ["get", "color"], "line-width": 4 },
       },
       {
