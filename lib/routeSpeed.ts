@@ -61,15 +61,9 @@ export function speedBandBoundary(thresholds: readonly number[], index: number):
 // GPS の揺らぎで境目の色が細かく入れ替わらないよう、前後の点と平均する
 const SMOOTHING_RADIUS = 1;
 
-type Coordinate = [number, number];
-
-export type SpeedSegmentFeature = {
-  type: "Feature";
-  properties: { color: string; order: number };
-  geometry: { type: "LineString"; coordinates: Coordinate[] };
-};
-export type SpeedSegments = { type: "FeatureCollection"; features: SpeedSegmentFeature[] };
-export type SpeedRoute = { segments: SpeedSegments; thresholds: readonly number[] };
+// MapLibre の line-gradient に渡す、線の始点からの割合で色を切り替える式
+export type SpeedGradient = ["step", ["line-progress"], string, ...(number | string)[]];
+export type SpeedRoute = { gradient: SpeedGradient; thresholds: readonly number[] };
 
 function speedBand(speedInUnit: number, thresholds: readonly number[]): number {
   return thresholds.filter((threshold) => speedInUnit >= threshold).length;
@@ -87,8 +81,18 @@ function smoothSpeeds(speeds: (number | null)[]): number[] {
   });
 }
 
-// 同じ速度帯が続く区間を1本の線にまとめる
-export function buildSpeedSegments(
+// line-progress は Web メルカトル座標での距離から求められるため、同じ投影で区間の長さを測る
+function mercatorX(lng: number): number {
+  return lng / 360 + 0.5;
+}
+
+function mercatorY(lat: number): number {
+  const sin = Math.sin((lat * Math.PI) / 180);
+  return 0.5 - (0.25 * Math.log((1 + sin) / (1 - sin))) / Math.PI;
+}
+
+// ルートを1本の線のまま速度帯ごとに塗り分ける（区間ごとに線を分けると、ズームアウト時に短い線が間引かれて途切れる）
+export function buildSpeedGradient(
   points: GpsPoint[],
   unit: DistanceUnit,
   colors: readonly string[],
@@ -100,25 +104,34 @@ export function buildSpeedSegments(
   const segmentSpeeds = accepted.slice(1).map((_, index) => mpsToUnit((speeds[index] + speeds[index + 1]) / 2, unit));
   const topSpeed = segmentSpeeds.reduce((max, speed) => Math.max(max, speed), 0);
   const thresholds = speedBandThresholds(scale, unit, topSpeed);
-  const features: SpeedSegments["features"] = [];
-  let current: { band: number; coordinates: Coordinate[] } | null = null;
+  const bands = segmentSpeeds.map((speed) => speedBand(speed, thresholds));
+  const lengths = accepted
+    .slice(1)
+    .map((point, index) =>
+      Math.hypot(
+        mercatorX(point.lng) - mercatorX(accepted[index].lng),
+        mercatorY(point.lat) - mercatorY(accepted[index].lat),
+      ),
+    );
+  const totalLength = lengths.reduce((sum, length) => sum + length, 0);
 
-  for (let i = 1; i < accepted.length; i++) {
-    const from: Coordinate = [accepted[i - 1].lng, accepted[i - 1].lat];
-    const to: Coordinate = [accepted[i].lng, accepted[i].lat];
-    const band = speedBand(segmentSpeeds[i - 1], thresholds);
-    if (current && current.band === band) {
-      current.coordinates.push(to);
-      continue;
-    }
-    // 境目で線が折れても角が欠けないよう、前の区間を1つ先まで延ばして角を丸く描き、その上に次の区間を重ねる
-    current?.coordinates.push(to);
-    current = { band, coordinates: [from, to] };
-    features.push({
-      type: "Feature",
-      properties: { color: colors[band], order: features.length },
-      geometry: { type: "LineString", coordinates: current.coordinates },
-    });
+  const stops: { progress: number; color: string }[] = [];
+  let distance = 0;
+  for (let i = 1; i < bands.length; i++) {
+    distance += lengths[i - 1];
+    if (bands[i] === bands[i - 1]) continue;
+    const progress = totalLength > 0 ? distance / totalLength : 0;
+    const last = stops[stops.length - 1];
+    // step の境目は厳密に増加させる必要があるため、長さ0の区間で境目が重なったら後の色で上書きする
+    if (last && last.progress === progress) last.color = colors[bands[i]];
+    else stops.push({ progress, color: colors[bands[i]] });
   }
-  return { segments: { type: "FeatureCollection", features }, thresholds };
+  const firstColor = colors[bands[0] ?? 0];
+  // step は境目が1つ以上必要なため、色が変わらない記録では終点に同じ色の境目を置く
+  if (stops.length === 0) stops.push({ progress: 1, color: firstColor });
+
+  return {
+    gradient: ["step", ["line-progress"], firstColor, ...stops.flatMap(({ progress, color }) => [progress, color])],
+    thresholds,
+  };
 }
