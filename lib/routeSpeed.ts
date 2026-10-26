@@ -65,7 +65,7 @@ type Coordinate = [number, number];
 
 export type SpeedSegmentFeature = {
   type: "Feature";
-  properties: { color: string };
+  properties: { color: string; order: number };
   geometry: { type: "LineString"; coordinates: Coordinate[] };
 };
 export type SpeedSegments = { type: "FeatureCollection"; features: SpeedSegmentFeature[] };
@@ -111,10 +111,12 @@ export function buildSpeedSegments(
       current.coordinates.push(to);
       continue;
     }
+    // 境目で線が折れても角が欠けないよう、前の区間を1つ先まで延ばして角を丸く描き、その上に次の区間を重ねる
+    current?.coordinates.push(to);
     current = { band, coordinates: [from, to] };
     features.push({
       type: "Feature",
-      properties: { color: colors[band] },
+      properties: { color: colors[band], order: features.length },
       geometry: { type: "LineString", coordinates: current.coordinates },
     });
   }
