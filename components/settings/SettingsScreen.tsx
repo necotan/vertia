@@ -3,8 +3,8 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { locales, saveLocale } from "@/lib/i18n/config";
-import { saveSpeedPalette, useSpeedPalette } from "@/lib/routeColorMode";
-import { SPEED_PALETTES, speedPaletteIds } from "@/lib/routeSpeed";
+import { saveSpeedPalette, saveSpeedScale, useSpeedPalette, useSpeedScale } from "@/lib/routeColorMode";
+import { SPEED_PALETTES, speedPaletteIds, speedScaleIds } from "@/lib/routeSpeed";
 import { distanceUnits, saveDistanceUnit, useDistanceUnit } from "@/lib/units";
 
 const themes = ["system", "light", "dark"] as const;
@@ -63,6 +63,7 @@ export function SettingsScreen() {
   const { theme, setTheme } = useTheme();
   const distanceUnit = useDistanceUnit();
   const speedPalette = useSpeedPalette();
+  const speedScale = useSpeedScale();
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-8 px-4 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-[calc(env(safe-area-inset-top)+2.5rem)] sm:px-6">
@@ -106,6 +107,16 @@ export function SettingsScreen() {
         onChange={(value) => {
           const next = speedPaletteIds.find((p) => p === value);
           if (next) saveSpeedPalette(next);
+        }}
+      />
+
+      <SegmentedControl
+        label={t("speedScale")}
+        options={speedScaleIds.map((value) => ({ value, label: t(`speedScaleOptions.${value}`) }))}
+        value={speedScale}
+        onChange={(value) => {
+          const next = speedScaleIds.find((s) => s === value);
+          if (next) saveSpeedScale(next);
         }}
       />
     </main>

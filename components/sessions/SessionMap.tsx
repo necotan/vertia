@@ -16,7 +16,7 @@ import { BottomSheet } from "@/components/ui/BottomSheet";
 import type { GpsPoint } from "@/lib/db/schema";
 import { GPS_ACCURACY_LIMIT_M } from "@/lib/drive/liveStats";
 import { MAP_STYLES, type MapStyleId, saveMapStyle, themeMapStyle, useSavedMapStyle } from "@/lib/mapStyles";
-import { saveRouteSpeedColors, useRouteSpeedColors, useSpeedPalette } from "@/lib/routeColorMode";
+import { saveRouteSpeedColors, useRouteSpeedColors, useSpeedPalette, useSpeedScale } from "@/lib/routeColorMode";
 import { buildSpeedSegments, SPEED_PALETTES, type SpeedSegments } from "@/lib/routeSpeed";
 import { useDistanceUnit } from "@/lib/units";
 import { MapStylePicker } from "./MapStylePicker";
@@ -159,6 +159,7 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
   const savedStyle = useSavedMapStyle();
   const speedColors = useRouteSpeedColors();
   const speedPalette = useSpeedPalette();
+  const speedScale = useSpeedScale();
   const unit = useDistanceUnit();
   const mapRef = useRef<MapLibreMap | null>(null);
   const boundsRef = useRef<LngLatBounds | null>(null);
@@ -171,10 +172,11 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
     () => points.filter((p) => p.accuracy <= GPS_ACCURACY_LIMIT_M).map((p) => [p.lng, p.lat]),
     [points],
   );
-  const speedSegments = useMemo(
-    () => buildSpeedSegments(points, unit, SPEED_PALETTES[speedPalette]),
-    [points, unit, speedPalette],
+  const speedRoute = useMemo(
+    () => buildSpeedSegments(points, unit, SPEED_PALETTES[speedPalette], speedScale),
+    [points, unit, speedPalette, speedScale],
   );
+  const speedSegments = speedRoute.segments;
   // 地図を作り直さずに切り替えるため、ルートの描画ではその時点の値を参照する
   const speedSegmentsRef = useRef(speedSegments);
   const speedColorsRef = useRef(speedColors);
@@ -505,6 +507,7 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
               </button>
               {speedColors && (
                 <RouteSpeedLegend
+                  thresholds={speedRoute.thresholds}
                   className={`absolute ${
                     isFullscreen
                       ? "left-[calc(env(safe-area-inset-left)+20px)] top-[calc(env(safe-area-inset-top)+40px)]"

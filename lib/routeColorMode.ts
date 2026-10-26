@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { type SpeedPaletteId, speedPaletteIds } from "@/lib/routeSpeed";
+import { type SpeedPaletteId, speedPaletteIds, type SpeedScaleId, speedScaleIds } from "@/lib/routeSpeed";
 
 export const ROUTE_SPEED_COLORS_STORAGE_KEY = "vertia.routeSpeedColors";
 const ROUTE_SPEED_COLORS_CHANGE_EVENT = "vertia:route-speed-colors-change";
@@ -80,4 +80,46 @@ function getSpeedPaletteServerSnapshot(): SpeedPaletteId {
 
 export function useSpeedPalette(): SpeedPaletteId {
   return useSyncExternalStore(subscribeSpeedPalette, detectSpeedPalette, getSpeedPaletteServerSnapshot);
+}
+
+export const SPEED_SCALE_STORAGE_KEY = "vertia.speedScale";
+const SPEED_SCALE_CHANGE_EVENT = "vertia:speed-scale-change";
+export const defaultSpeedScale: SpeedScaleId = "relative";
+
+export function isSpeedScaleId(value: unknown): value is SpeedScaleId {
+  return typeof value === "string" && (speedScaleIds as readonly string[]).includes(value);
+}
+
+export function detectSpeedScale(): SpeedScaleId {
+  try {
+    const stored = window.localStorage.getItem(SPEED_SCALE_STORAGE_KEY);
+    if (isSpeedScaleId(stored)) return stored;
+  } catch {
+  }
+  return defaultSpeedScale;
+}
+
+export function saveSpeedScale(scale: SpeedScaleId): void {
+  try {
+    window.localStorage.setItem(SPEED_SCALE_STORAGE_KEY, scale);
+  } catch {
+  }
+  window.dispatchEvent(new CustomEvent(SPEED_SCALE_CHANGE_EVENT));
+}
+
+function subscribeSpeedScale(onChange: () => void): () => void {
+  window.addEventListener(SPEED_SCALE_CHANGE_EVENT, onChange);
+  window.addEventListener("storage", onChange);
+  return () => {
+    window.removeEventListener(SPEED_SCALE_CHANGE_EVENT, onChange);
+    window.removeEventListener("storage", onChange);
+  };
+}
+
+function getSpeedScaleServerSnapshot(): SpeedScaleId {
+  return defaultSpeedScale;
+}
+
+export function useSpeedScale(): SpeedScaleId {
+  return useSyncExternalStore(subscribeSpeedScale, detectSpeedScale, getSpeedScaleServerSnapshot);
 }

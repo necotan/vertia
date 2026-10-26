@@ -119,6 +119,11 @@
     "speedPaletteOptions": {
       "blue": "Blue",
       "standard": "Colorful"
+    },
+    "speedScale": "Speed color scale",
+    "speedScaleOptions": {
+      "relative": "Top speed of drive",
+      "absolute": "Fixed speeds"
     }
   },
   "languageOptions": {
