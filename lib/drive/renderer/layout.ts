@@ -36,10 +36,12 @@ export function computeLayout(width: number, height: number): DriveLayout {
 
   if (width > height) {
     const halfW = (bodyW - pad) / 2;
-    const speed: Rect = { x: pad, y: bodyTop, w: halfW, h: bodyH };
-    const r = Math.max(0, (Math.min(halfW, bodyH) / 2) * G_METER_SIZE_RATIO);
-    const gMeter: Circle = { cx: pad + halfW + pad + halfW / 2, cy: bodyTop + bodyH / 2, r };
-    return { top, speed, gMeter, stats, hint: hintBelow(stats, width, height) };
+    const columnH = Math.max(0, stats.y + stats.h - bodyTop);
+    const speed: Rect = { x: pad, y: bodyTop, w: halfW, h: Math.max(0, columnH - statsH - pad) };
+    const columnStats: Rect = { x: pad, y: stats.y, w: halfW, h: statsH };
+    const r = Math.max(0, (Math.min(halfW, columnH) / 2) * G_METER_SIZE_RATIO);
+    const gMeter: Circle = { cx: pad + halfW + pad + halfW / 2, cy: bodyTop + columnH / 2, r };
+    return { top, speed, gMeter, stats: columnStats, hint: hintBelow(columnStats, width, height) };
   }
 
   const bottomSpace = clamp(shortSide * 0.08, 24, 64);
