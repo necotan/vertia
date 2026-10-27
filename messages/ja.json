@@ -98,6 +98,16 @@
   "home": {
     "title": "ホーム",
     "startDrive": "走行を開始",
+    "stats": {
+      "title": "走行距離",
+      "unitLabel": "({unit})",
+      "distance": "走行距離",
+      "totalDistance": "総走行距離",
+      "count": "走行回数",
+      "countValue": "{count, number}<unit>回</unit>",
+      "totalDuration": "総走行時間",
+      "hoursUnit": "時間"
+    },
     "recent": {
       "title": "最近の記録"
     }
