@@ -47,6 +47,7 @@ export function drawGMeter(
     ctx.fillText(ringG.toFixed(1), cx + ringR - tickSize * 0.3, cy + tickSize * 0.3);
   }
 
+  drawAxisValues(ctx, circle, g);
   if (!g) return;
 
   const dotRadius = Math.max(6, r * 0.07);
@@ -57,6 +58,29 @@ export function drawGMeter(
   ctx.beginPath();
   ctx.arc(dot.x, dot.y, dotRadius, 0, Math.PI * 2);
   ctx.fill();
+}
+
+function drawAxisValues(ctx: CanvasRenderingContext2D, circle: Circle, g: GForce | null): void {
+  const { cx, cy, r } = circle;
+  const size = Math.max(10, r * 0.1);
+  const gap = r * 0.04;
+  const lateral = g?.lateral ?? 0;
+  const longitudinal = g?.longitudinal ?? 0;
+  const values: { value: number; x: number; y: number; align: CanvasTextAlign; baseline: CanvasTextBaseline }[] = [
+    { value: -longitudinal, x: cx, y: cy - r - gap, align: "center", baseline: "bottom" },
+    { value: longitudinal, x: cx, y: cy + r + gap, align: "center", baseline: "top" },
+    { value: lateral, x: cx - r - gap, y: cy, align: "right", baseline: "middle" },
+    { value: -lateral, x: cx + r + gap, y: cy, align: "left", baseline: "middle" },
+  ];
+
+  ctx.font = `600 ${size}px ${NUMBER_FONT}`;
+  for (const { value, x, y, align, baseline } of values) {
+    const text = Math.max(0, value).toFixed(2);
+    ctx.fillStyle = !g ? COLORS.placeholder : text === "0.00" ? COLORS.subText : COLORS.text;
+    ctx.textAlign = align;
+    ctx.textBaseline = baseline;
+    ctx.fillText(text, x, y);
+  }
 }
 
 // 外周を超える値は外周上に張り付かせる
