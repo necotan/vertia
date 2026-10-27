@@ -31,6 +31,8 @@ export function drawGMeter(
   ctx.font = `${tickSize}px ${NUMBER_FONT}`;
   ctx.textAlign = "right";
   ctx.textBaseline = "top";
+  const ringSpacing = r * (RING_STEP_G / G_METER_FULL_SCALE);
+  const showInnerTicks = ctx.measureText(G_METER_FULL_SCALE.toFixed(1)).width + tickSize * 0.6 <= ringSpacing;
 
   for (let i = 1; i <= ringCount; i++) {
     const ringG = RING_STEP_G * i;
@@ -43,6 +45,7 @@ export function drawGMeter(
     ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
     ctx.stroke();
     
+    if (!isOuter && !showInnerTicks) continue;
     ctx.fillStyle = COLORS.subText;
     ctx.fillText(ringG.toFixed(1), cx + ringR - tickSize * 0.3, cy + tickSize * 0.3);
   }
