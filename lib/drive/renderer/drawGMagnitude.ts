@@ -19,7 +19,13 @@ export function drawGMagnitude(ctx: CanvasRenderingContext2D, rect: Rect, g: GFo
   const unitWidth = ctx.measureText(labels.gUnit).width;
 
   const value = g ? Math.hypot(g.lateral, g.longitudinal).toFixed(2) : "0.00";
+  const valueRight = right - unitWidth - size * 0.2;
   ctx.fillStyle = color;
   ctx.font = `600 ${size}px ${NUMBER_FONT}`;
-  ctx.fillText(value, right - unitWidth - size * 0.2, cy);
+  ctx.fillText(value, valueRight, cy);
+  const valueWidth = ctx.measureText(value).width;
+
+  ctx.fillStyle = g ? COLORS.subText : COLORS.placeholder;
+  ctx.font = `${size}px ${LABEL_FONT}`;
+  ctx.fillText(labels.gMagnitude, valueRight - valueWidth - size * 0.5, cy);
 }

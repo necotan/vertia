@@ -144,6 +144,7 @@
       "max": "最高",
       "gpsAccuracy": "GPS誤差",
       "gpsWaiting": "GPS測位中",
+      "gMagnitude": "合成",
       "gUnit": "G"
     },
     "wakeLock": {

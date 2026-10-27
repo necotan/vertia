@@ -20,6 +20,7 @@ export interface DriveLabels {
   max: string;
   gpsAccuracy: string;
   gpsWaiting: string;
+  gMagnitude: string;
   gUnit: string;
 }
 
