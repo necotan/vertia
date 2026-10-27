@@ -155,8 +155,7 @@
       "max": "最高",
       "gpsAccuracy": "GPS誤差",
       "gpsWaiting": "GPS測位中",
-      "gMagnitude": "合成",
-      "gUnit": "G"
+      "gMagnitude": "合成"
     },
     "wakeLock": {
       "failed": "画面のスリープ防止を有効にできませんでした",
@@ -202,6 +201,8 @@
     "mph": "mph",
     "mps": "m/s",
     "celsius": "°C",
-    "fahrenheit": "°F"
+    "fahrenheit": "°F",
+    "m": "m",
+    "g": "G"
   }
 }

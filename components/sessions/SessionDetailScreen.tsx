@@ -113,9 +113,9 @@ function SummarySections({ summary }: { summary: SessionSummary }) {
       <StatSection
         title={t("sections.gForce")}
         items={[
-          { label: t("maxG"), value: g(summary.maxG), unit: "G" },
-          { label: t("maxLateralG"), value: g(summary.maxLateralG), unit: "G" },
-          { label: t("maxLongitudinalG"), value: g(summary.maxLongitudinalG), unit: "G" },
+          { label: t("maxG"), value: g(summary.maxG), unit: tUnits("g") },
+          { label: t("maxLateralG"), value: g(summary.maxLateralG), unit: tUnits("g") },
+          { label: t("maxLongitudinalG"), value: g(summary.maxLongitudinalG), unit: tUnits("g") },
         ]}
       />
     </>

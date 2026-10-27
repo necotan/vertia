@@ -21,7 +21,7 @@ export function drawGpsAccuracy(ctx: CanvasRenderingContext2D, rect: Rect, frame
   }
 
   // 等幅フォントではスペースも数字1文字分の幅になり数字と単位が離れるため、単位は別に描いて間隔を詰める
-  const unit = "m";
+  const unit = labels.gpsAccuracyUnit;
   ctx.fillStyle = COLORS.subText;
   ctx.font = `${size}px ${LABEL_FONT}`;
   ctx.fillText(unit, right, cy);
