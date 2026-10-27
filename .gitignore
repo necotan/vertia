@@ -44,6 +44,6 @@ yarn-error.log*
 next-env.d.ts
 
 # AI conversation history
-/docs
+/docs/*
+!/docs/requirements.md
 /.claude
-CLAUDE.md
