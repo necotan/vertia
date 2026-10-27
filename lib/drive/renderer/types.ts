@@ -19,6 +19,7 @@ export interface DriveLabels {
   median: string;
   max: string;
   gpsAccuracy: string;
+  gpsAccuracyUnit: string;
   gpsWaiting: string;
   gMagnitude: string;
   gUnit: string;

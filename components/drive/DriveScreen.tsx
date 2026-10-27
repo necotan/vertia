@@ -33,9 +33,10 @@ export function DriveScreen() {
       median: t("canvas.median"),
       max: t("canvas.max"),
       gpsAccuracy: t("canvas.gpsAccuracy"),
+      gpsAccuracyUnit: tUnits("m"),
       gpsWaiting: t("canvas.gpsWaiting"),
       gMagnitude: t("canvas.gMagnitude"),
-      gUnit: t("canvas.gUnit"),
+      gUnit: tUnits("g"),
     }),
     [t, tUnits, unit],
   );

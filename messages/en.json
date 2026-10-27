@@ -155,8 +155,7 @@
       "max": "MAX",
       "gpsAccuracy": "GPS ±",
       "gpsWaiting": "Acquiring GPS",
-      "gMagnitude": "Total",
-      "gUnit": "G"
+      "gMagnitude": "Total"
     },
     "wakeLock": {
       "failed": "Could not keep the screen awake",
@@ -202,6 +201,8 @@
     "mph": "mph",
     "mps": "m/s",
     "celsius": "°C",
-    "fahrenheit": "°F"
+    "fahrenheit": "°F",
+    "m": "m",
+    "g": "G"
   }
 }
