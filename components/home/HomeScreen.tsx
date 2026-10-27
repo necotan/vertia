@@ -10,9 +10,7 @@ import { db, type DriveSession } from "@/lib/db/schema";
 import { recoverInterruptedSessions } from "@/lib/db/sessionRepository";
 import { useDeferredLoading } from "@/lib/hooks/useDeferredLoading";
 
-const RECENT_LIMIT = 5;
-
-const SKELETON_COUNT = 3;
+const RECENT_LIMIT = 3;
 
 export function HomeScreen() {
   const t = useTranslations("home");
@@ -45,7 +43,7 @@ export function HomeScreen() {
           <h2 className="text-sm font-semibold text-muted-foreground">{t("recent.title")}</h2>
           {showSkeleton && (
             <ul className="flex flex-col gap-2" aria-busy="true">
-              {[...Array(SKELETON_COUNT)].map((_, i) => (
+              {[...Array(RECENT_LIMIT)].map((_, i) => (
                 <li key={i}>
                   <SessionCardSkeleton />
                 </li>
