@@ -85,7 +85,7 @@ export class DriveRenderer {
     drawGpsAccuracy(ctx, layout.top, frame, this.labels);
     drawGMagnitude(ctx, layout.top, frame.g, this.labels);
     drawSpeed(ctx, layout.speed, this.toSpeed(frame.speedMps), this.labels);
-    drawGMeter(ctx, layout.gMeter, frame.g);
+    drawGMeter(ctx, layout.gMeter, frame.g, frame.gTrail);
     drawStats(
       ctx,
       layout.stats,

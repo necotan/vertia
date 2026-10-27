@@ -11,6 +11,7 @@ import {
 import { WakeLockKeeper, type WakeLockStatus } from "@/lib/sensors/wakeLock";
 import { WeatherWatcher } from "@/lib/weather/WeatherWatcher";
 import { createCalibration, GForceLowPass, GravityAverager, toGForce, type Calibration } from "./gForce";
+import { GTrail } from "./gTrail";
 import { G_DISPLAY_TIME_CONSTANT_MS, LiveStats, resolveSpeed } from "./liveStats";
 import { SessionRecorder } from "./recorder";
 import type { DriveFrame } from "./renderer/types";
@@ -42,10 +43,12 @@ const GPS_STALE_MS = 5000;
 // 高頻度の値は frame に保持し、React には粗い状態変化だけを通知する
 export class DriveController {
   private ui: DriveUiState = initialDriveUiState;
+  private readonly gTrail = new GTrail();
   private readonly frame: DriveFrame = {
     speedMps: null,
     gpsAccuracyM: null,
     g: null,
+    gTrail: this.gTrail.points,
     avgMps: null,
     medianMps: null,
     maxMps: null,
@@ -162,6 +165,7 @@ export class DriveController {
     this.calibrationStartedAt = 0;
     this.lowPass.reset();
     this.frame.g = null;
+    this.gTrail.clear();
     this.setUi({ phase: "calibrating" });
   }
 
@@ -187,6 +191,7 @@ export class DriveController {
     if (!this.calibration) return;
     const g = this.lowPass.update(toGForce(this.calibration, sample.ax, sample.ay, sample.az), sample.t);
     this.frame.g = g;
+    this.gTrail.add(g, sample.t);
     if (this.recorder) {
       this.recorder.addMotion(sample);
       this.stats.addG(g);
@@ -249,6 +254,7 @@ export class DriveController {
     this.frame.speedMps = null;
     this.frame.gpsAccuracyM = null;
     this.frame.g = null;
+    this.gTrail.clear();
   }
 
   private setUi(patch: Partial<DriveUiState>): void {
