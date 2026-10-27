@@ -1,12 +1,13 @@
 "use client";
 
 import { useLiveQuery } from "dexie-react-hooks";
+import { Share, Trash2 } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { BackLink } from "@/components/ui/BackLink";
-import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { IconButton } from "@/components/ui/IconButton";
 import { useToast } from "@/components/ui/Toast";
 import { db, type DriveSession, type SessionSummary, type SessionWeather } from "@/lib/db/schema";
 import { deleteSession, getSessionGpsPoints } from "@/lib/db/sessionRepository";
@@ -170,7 +171,25 @@ export function SessionDetailScreen() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-8 px-4 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-[calc(env(safe-area-inset-top)+2.5rem)] sm:px-6">
       <div className="flex flex-col gap-2">
-        <BackLink href="/sessions" label={tCommon("back")} className="mb-2" />
+        <div className="mb-2 flex items-center justify-between">
+          <BackLink href="/sessions" label={tCommon("back")} />
+          {session && (
+            <div className="flex items-center gap-3">
+              {isTransferSupported() && (
+                <IconButton
+                  label={exporting ? t("detail.export.exporting") : t("detail.export.button")}
+                  onClick={() => void handleExport()}
+                  disabled={exporting || deleting}
+                >
+                  <Share size={20} />
+                </IconButton>
+              )}
+              <IconButton label={t("detail.delete.button")} onClick={() => setConfirmOpen(true)} disabled={deleting}>
+                <Trash2 size={20} />
+              </IconButton>
+            </div>
+          )}
+        </div>
         {session && (
           <h1 className="text-2xl font-bold">
             {format.dateTime(session.startedAt, { dateStyle: "medium", timeStyle: "short" })}
@@ -193,29 +212,13 @@ export function SessionDetailScreen() {
       {session?.weather && <WeatherSection weather={session.weather} />}
       {session?.summary && <SummarySections summary={session.summary} />}
 
-      {session && (
-        <div className="mt-8 flex flex-col gap-4">
-          {isTransferSupported() && (
-            <Button variant="primary" onClick={() => void handleExport()} disabled={exporting || deleting}>
-              {exporting ? t("detail.export.exporting") : t("detail.export.button")}
-            </Button>
-          )}
-          <Button variant="destructive" onClick={() => setConfirmOpen(true)} disabled={deleting}>
-            {t("detail.delete.button")}
-          </Button>
-        </div>
-      )}
-
       <ConfirmDialog
         open={confirmOpen}
+        onOpenChange={setConfirmOpen}
         title={t("detail.delete.confirmTitle")}
         message={t("detail.delete.confirmMessage")}
-        confirmLabel={t("detail.delete.confirm")}
-        cancelLabel={tCommon("cancel")}
-        destructive
-        busy={deleting}
+        loading={deleting}
         onConfirm={() => void handleDelete()}
-        onCancel={() => setConfirmOpen(false)}
       />
     </main>
   );
