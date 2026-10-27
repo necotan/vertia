@@ -1,66 +1,52 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { Button } from "./Button";
+import { useTranslations } from "next-intl";
+import { Dialog, DialogActionButton, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "./Dialog";
 
 type Props = {
   open: boolean;
+  onOpenChange: (open: boolean) => void;
   title: string;
   message: string;
-  confirmLabel: string;
-  cancelLabel: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
   destructive?: boolean;
-  busy?: boolean;
+  loading?: boolean;
   onConfirm: () => void;
-  onCancel: () => void;
 };
 
 export function ConfirmDialog({
   open,
+  onOpenChange,
   title,
   message,
   confirmLabel,
   cancelLabel,
-  destructive = false,
-  busy = false,
+  destructive = true,
+  loading = false,
   onConfirm,
-  onCancel,
 }: Props) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (open && !dialog.open) dialog.showModal();
-    if (!open && dialog.open) dialog.close();
-  }, [open]);
+  const t = useTranslations("common");
 
   return (
-    <dialog
-      ref={dialogRef}
-      onCancel={(event) => {
-        event.preventDefault();
-        if (!busy) onCancel();
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!loading) onOpenChange(next);
       }}
-      onClick={(event) => {
-        if (event.target === event.currentTarget && !busy) onCancel();
-      }}
-      className="m-auto w-[calc(100%-2rem)] max-w-sm rounded-3xl border border-border bg-background p-0 text-foreground backdrop:bg-black/50"
     >
-      <div className="flex flex-col gap-6 p-6">
-        <div className="flex flex-col gap-2">
-          <h2 className="text-lg font-bold">{title}</h2>
-          <p className="text-sm text-muted-foreground">{message}</p>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <Button variant="outline" onClick={onCancel} disabled={busy}>
-            {cancelLabel}
-          </Button>
-          <Button variant={destructive ? "destructive" : "primary"} onClick={onConfirm} disabled={busy}>
-            {confirmLabel}
-          </Button>
-        </div>
-      </div>
-    </dialog>
+      <DialogContent>
+        <DialogTitle>{title}</DialogTitle>
+        <DialogDescription className="mt-2 whitespace-pre-wrap">{message}</DialogDescription>
+        <DialogFooter>
+          <DialogActionButton variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+            {cancelLabel ?? t("cancel")}
+          </DialogActionButton>
+          <DialogActionButton destructive={destructive} onClick={onConfirm} disabled={loading}>
+            {loading ? t("deleting") : (confirmLabel ?? t("delete"))}
+          </DialogActionButton>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

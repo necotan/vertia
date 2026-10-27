@@ -2,7 +2,9 @@
   "common": {
     "appName": "Vertia",
     "back": "Back",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "deleting": "Deleting…"
   },
   "nav": {
     "label": "Main navigation",
@@ -89,7 +91,6 @@
         "button": "Delete session",
         "confirmTitle": "Delete this session?",
         "confirmMessage": "All GPS and motion data will also be deleted. This cannot be undone.",
-        "confirm": "Delete",
         "failed": "Could not delete the session"
       }
     }
