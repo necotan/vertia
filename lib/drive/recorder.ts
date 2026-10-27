@@ -1,5 +1,11 @@
-import { appendSessionData, completeSession, createSession, setSessionWeather } from "@/lib/db/sessionRepository";
-import type { GpsPoint, MotionChunk, SessionCalibration, SessionSummary, SessionWeather } from "@/lib/db/schema";
+import {
+  appendSessionData,
+  completeSession,
+  createSession,
+  setSessionCalibration,
+  setSessionWeather,
+} from "@/lib/db/sessionRepository";
+import type { GpsPoint, MotionChunk, SessionCalibration, SessionWeather } from "@/lib/db/schema";
 import type { GeoFix } from "@/lib/sensors/geolocation";
 import type { MotionSample } from "@/lib/sensors/motion";
 
@@ -28,6 +34,7 @@ export class SessionRecorder {
   private constructor(
     readonly sessionId: string,
     readonly startedAt: number,
+    private calibration: SessionCalibration,
     private readonly onSaveError: () => void,
   ) {}
 
@@ -37,7 +44,7 @@ export class SessionRecorder {
     onSaveError: () => void,
   ): Promise<SessionRecorder> {
     const session = await createSession(calibration, startedAt);
-    const recorder = new SessionRecorder(session.id, startedAt, onSaveError);
+    const recorder = new SessionRecorder(session.id, startedAt, calibration, onSaveError);
     recorder.timer = window.setInterval(() => void recorder.flush(), FLUSH_INTERVAL_MS);
     return recorder;
   }
@@ -59,14 +66,21 @@ export class SessionRecorder {
     });
   }
 
-  async stop(endedAt: number, summary: SessionSummary): Promise<void> {
+  // 終了時の書き込みより後に古い値で上書きしないよう、データの書き込みと同じ列に並べる
+  // 失敗しても記録は続け、終了時に最終の値を書き込む
+  setCalibration(calibration: SessionCalibration): void {
+    this.calibration = calibration;
+    this.flushing = this.flushing.then(() => setSessionCalibration(this.sessionId, calibration).catch(() => undefined));
+  }
+
+  async stop(endedAt: number): Promise<void> {
     if (this.timer !== null) window.clearInterval(this.timer);
     this.timer = null;
     await this.flush();
     if (this.pendingGps.length > 0 || this.pendingChunks.length > 0) {
       throw new Error("Failed to flush session data");
     }
-    await completeSession(this.sessionId, endedAt, summary);
+    await completeSession(this.sessionId, this.startedAt, endedAt, this.calibration);
   }
 
   private takeChunk(): MotionChunk | null {

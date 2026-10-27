@@ -31,6 +31,8 @@ export interface SessionWeather {
 export interface SessionCalibration {
   // 停車中に平均した accelerationIncludingGravity（端末座標系、m/s²）
   gravity: Vec3;
+  // 走行中に推定した車両の前方（端末座標系の単位ベクトル）。推定前と、推定に対応する前の記録は null
+  forward: Vec3 | null;
 }
 
 export interface DriveSession {
@@ -78,7 +80,7 @@ export interface MotionChunk {
   rg: Float32Array | null;
 }
 
-export const SESSION_SCHEMA_VERSION = 2;
+export const SESSION_SCHEMA_VERSION = 3;
 
 class VertiaDatabase extends Dexie {
   sessions!: EntityTable<DriveSession, "id">;
@@ -101,6 +103,16 @@ class VertiaDatabase extends Dexie {
           .toCollection()
           .modify((session) => {
             session.weather = null;
+          }),
+      );
+    this.version(3)
+      .stores({})
+      .upgrade((tx) =>
+        tx
+          .table<DriveSession>("sessions")
+          .toCollection()
+          .modify((session) => {
+            session.calibration.forward = null;
           }),
       );
   }
