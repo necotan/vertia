@@ -15,43 +15,46 @@ export interface GForce {
   longitudinal: number;
 }
 
-const dot = (a: Vec3, b: Vec3): number => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-const scale = (a: Vec3, s: number): Vec3 => [a[0] * s, a[1] * s, a[2] * s];
-const sub = (a: Vec3, b: Vec3): Vec3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+export const dot = (a: Vec3, b: Vec3): number => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+export const scale = (a: Vec3, s: number): Vec3 => [a[0] * s, a[1] * s, a[2] * s];
+export const add = (a: Vec3, b: Vec3): Vec3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+export const sub = (a: Vec3, b: Vec3): Vec3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 const cross = (a: Vec3, b: Vec3): Vec3 => [
   a[1] * b[2] - a[2] * b[1],
   a[2] * b[0] - a[0] * b[2],
   a[0] * b[1] - a[1] * b[0],
 ];
-const length = (a: Vec3): number => Math.sqrt(dot(a, a));
+export const length = (a: Vec3): number => Math.sqrt(dot(a, a));
 
-function normalize(a: Vec3): Vec3 | null {
+export function normalize(a: Vec3): Vec3 | null {
   const len = length(a);
   return len < 1e-6 ? null : scale(a, 1 / len);
 }
 
 // ベクトルを up に垂直な平面へ射影して正規化する
-function projectToHorizontal(v: Vec3, up: Vec3): Vec3 | null {
+export function projectToHorizontal(v: Vec3, up: Vec3): Vec3 | null {
   return normalize(sub(v, scale(up, dot(v, up))));
 }
 
-// 画面が運転者を向いている前提で、前方向を画面の法線の逆向きとする
+// 走行中に推定した前方（forward）が無いときは、画面が運転者を向いている前提で画面の法線の逆向きを前とする
 // 端末がほぼ水平に置かれている場合は端末上端方向を前とみなす
-export function createCalibration(gravity: Vec3): Calibration | null {
+export function createCalibration(gravity: Vec3, estimatedForward: Vec3 | null = null): Calibration | null {
   if (Math.abs(length(gravity) - STANDARD_GRAVITY) > 3) return null;
   const up = normalize(gravity);
   if (!up) return null;
 
-  const screenNormal: Vec3 = [0, 0, 1];
-  const deviceTop: Vec3 = [0, 1, 0];
-  const isFlat = Math.abs(dot(screenNormal, up)) > 0.8;
-  const forward = isFlat
-    ? projectToHorizontal(deviceTop, up)
-    : projectToHorizontal(scale(screenNormal, -1), up);
+  const forward = (estimatedForward && projectToHorizontal(estimatedForward, up)) ?? defaultForward(up);
   if (!forward) return null;
 
   const right = cross(forward, up);
   return { gravity, up, forward, right };
+}
+
+function defaultForward(up: Vec3): Vec3 | null {
+  const screenNormal: Vec3 = [0, 0, 1];
+  const deviceTop: Vec3 = [0, 1, 0];
+  const isFlat = Math.abs(dot(screenNormal, up)) > 0.8;
+  return isFlat ? projectToHorizontal(deviceTop, up) : projectToHorizontal(scale(screenNormal, -1), up);
 }
 
 export function toGForce(calibration: Calibration, ax: number, ay: number, az: number): GForce {

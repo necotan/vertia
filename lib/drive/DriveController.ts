@@ -1,4 +1,4 @@
-import type { SessionWeather } from "@/lib/db/schema";
+import type { SessionCalibration, SessionWeather, Vec3 } from "@/lib/db/schema";
 import { detectDriveCapabilities, isDriveSupported } from "@/lib/sensors/capabilities";
 import { watchGeolocation, type GeoErrorKind, type GeoFix } from "@/lib/sensors/geolocation";
 import {
@@ -10,6 +10,7 @@ import {
 } from "@/lib/sensors/motion";
 import { WakeLockKeeper, type WakeLockStatus } from "@/lib/sensors/wakeLock";
 import { WeatherWatcher } from "@/lib/weather/WeatherWatcher";
+import { ForwardEstimator } from "./forwardEstimator";
 import { createCalibration, GForceLowPass, GravityAverager, toGForce, type Calibration } from "./gForce";
 import { GTrail } from "./gTrail";
 import { G_DISPLAY_TIME_CONSTANT_MS, LiveStats, resolveSpeed } from "./liveStats";
@@ -58,6 +59,7 @@ export class DriveController {
   private readonly lowPass = new GForceLowPass(G_DISPLAY_TIME_CONSTANT_MS);
   private readonly stats = new LiveStats();
   private calibration: Calibration | null = null;
+  private forwardEstimator: ForwardEstimator | null = null;
   private averager: GravityAverager | null = null;
   private calibrationStartedAt = 0;
   private lastFix: GeoFix | null = null;
@@ -99,7 +101,7 @@ export class DriveController {
     const startedAt = Date.now();
     let recorder: SessionRecorder;
     try {
-      recorder = await SessionRecorder.start({ gravity: this.calibration.gravity }, startedAt, () =>
+      recorder = await SessionRecorder.start(this.sessionCalibration(this.calibration), startedAt, () =>
         this.setUi({ error: "saveFailed" }),
       );
     } catch {
@@ -119,10 +121,9 @@ export class DriveController {
     if (this.ui.phase !== "recording" || !recorder) return;
     this.setUi({ phase: "saving" });
     const endedAt = Date.now();
-    const summary = this.stats.toSummary(endedAt);
     this.recorder = null;
     try {
-      await recorder.stop(endedAt, summary);
+      await recorder.stop(endedAt);
       this.setUi({ phase: "ready" });
     } catch {
       this.setUi({ phase: "ready", error: "saveFailed" });
@@ -138,10 +139,7 @@ export class DriveController {
     await this.wakeLock.disable();
     const recorder = this.recorder;
     this.recorder = null;
-    if (recorder) {
-      const endedAt = Date.now();
-      await recorder.stop(endedAt, this.stats.toSummary(endedAt)).catch(() => undefined);
-    }
+    if (recorder) await recorder.stop(Date.now()).catch(() => undefined);
   }
 
   private async startAfterPermission(permission: Promise<MotionPermissionResult>): Promise<void> {
@@ -162,6 +160,7 @@ export class DriveController {
 
   private beginCalibration(): void {
     this.averager = new GravityAverager();
+    this.forwardEstimator = null;
     this.calibrationStartedAt = 0;
     this.lowPass.reset();
     this.frame.g = null;
@@ -179,6 +178,7 @@ export class DriveController {
         const calibration = gravity ? createCalibration(gravity) : null;
         if (calibration) {
           this.calibration = calibration;
+          this.forwardEstimator = new ForwardEstimator(calibration);
           this.averager = null;
           this.setUi({ phase: "ready" });
         } else {
@@ -189,14 +189,25 @@ export class DriveController {
     }
 
     if (!this.calibration) return;
+    const forward = this.forwardEstimator?.update(sample, this.frame.speedMps) ?? null;
+    if (forward) this.applyForward(this.calibration, forward);
+
     const g = this.lowPass.update(toGForce(this.calibration, sample.ax, sample.ay, sample.az), sample.t);
     this.frame.g = g;
     this.gTrail.add(g, sample.t);
-    if (this.recorder) {
-      this.recorder.addMotion(sample);
-      this.stats.addG(g);
-    }
+    this.recorder?.addMotion(sample);
   };
+
+  private applyForward(current: Calibration, forward: Vec3): void {
+    const calibration = createCalibration(current.gravity, forward);
+    if (!calibration) return;
+    this.calibration = calibration;
+    this.recorder?.setCalibration(this.sessionCalibration(calibration));
+  }
+
+  private sessionCalibration(calibration: Calibration): SessionCalibration {
+    return { gravity: calibration.gravity, forward: this.forwardEstimator?.forward ?? null };
+  }
 
   private readonly handleFix = (fix: GeoFix): void => {
     const speed = resolveSpeed(this.lastFix, fix);
@@ -250,6 +261,7 @@ export class DriveController {
     this.weather = null;
     this.averager = null;
     this.calibration = null;
+    this.forwardEstimator = null;
     this.lastFix = null;
     this.frame.speedMps = null;
     this.frame.gpsAccuracyM = null;

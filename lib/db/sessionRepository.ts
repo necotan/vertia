@@ -48,8 +48,30 @@ export async function setSessionWeather(sessionId: string, weather: SessionWeath
   await db.sessions.update(sessionId, { weather });
 }
 
-export async function completeSession(sessionId: string, endedAt: number, summary: SessionSummary): Promise<void> {
-  await db.sessions.update(sessionId, { status: "completed", endedAt, updatedAt: endedAt, summary });
+// 走行中に推定した前方を記録中に書き込み、中断時の復旧でも使えるようにする
+export async function setSessionCalibration(sessionId: string, calibration: SessionCalibration): Promise<void> {
+  await db.sessions.update(sessionId, { calibration });
+}
+
+// 記録の途中で前方の推定が変わっても全区間を同じ向きで集計するよう、サマリーは保存済みのデータから計算し直す
+export async function completeSession(
+  sessionId: string,
+  startedAt: number,
+  endedAt: number,
+  calibration: SessionCalibration,
+): Promise<void> {
+  const summary = await computeStoredSummary(sessionId, startedAt, endedAt, calibration);
+  await db.sessions.update(sessionId, { status: "completed", endedAt, updatedAt: endedAt, calibration, summary });
+}
+
+async function computeStoredSummary(
+  sessionId: string,
+  startedAt: number,
+  endedAt: number,
+  calibration: SessionCalibration,
+): Promise<SessionSummary> {
+  const [points, chunks] = await Promise.all([getSessionGpsPoints(sessionId), getSessionMotionChunks(sessionId)]);
+  return computeSummaryFromData(startedAt, endedAt, calibration, points, chunks);
 }
 
 // セッションと紐づく時系列データをまとめて削除する
@@ -81,12 +103,8 @@ export async function recoverInterruptedSessions(now: number = Date.now()): Prom
     .toArray();
 
   for (const session of stale) {
-    const [points, chunks] = await Promise.all([
-      getSessionGpsPoints(session.id),
-      getSessionMotionChunks(session.id),
-    ]);
     const endedAt = session.updatedAt;
-    const summary = computeSummaryFromData(session.startedAt, endedAt, session.calibration, points, chunks);
+    const summary = await computeStoredSummary(session.id, session.startedAt, endedAt, session.calibration);
     await db.sessions.update(session.id, { status: "interrupted", endedAt, summary });
   }
   return stale.length;

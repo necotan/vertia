@@ -12,8 +12,8 @@ import {
 } from "./schema";
 
 const FILE_FORMAT = "vertia-session";
-const FILE_VERSION = 2;
-const SUPPORTED_FILE_VERSIONS: readonly number[] = [1, 2];
+const FILE_VERSION = 3;
+const SUPPORTED_FILE_VERSIONS: readonly number[] = [1, 2, 3];
 
 interface EncodedMotionChunk {
   seq: number;
@@ -208,10 +208,11 @@ function parseSession(value: unknown): DriveSession | null {
   if (!isNumber(startedAt) || !isNullableNumber(endedAt) || !isNumber(updatedAt)) return null;
   if (!isNumber(schemaVersion) || schemaVersion > SESSION_SCHEMA_VERSION) return null;
 
-  if (!isObject(calibration) || !Array.isArray(calibration.gravity)) return null;
-  const gravity = calibration.gravity;
-  if (gravity.length !== 3 || !gravity.every(isNumber)) return null;
-  const vec: Vec3 = [gravity[0], gravity[1], gravity[2]];
+  if (!isObject(calibration)) return null;
+  const gravity = parseVec3(calibration.gravity);
+  if (!gravity) return null;
+  const forward = parseForward(calibration.forward);
+  if (forward === undefined) return null;
 
   let parsedSummary: SessionSummary | null = null;
   if (summary !== null) {
@@ -233,11 +234,22 @@ function parseSession(value: unknown): DriveSession | null {
     startedAt,
     endedAt,
     updatedAt,
-    calibration: { gravity: vec },
+    calibration: { gravity, forward },
     summary: parsedSummary,
     weather: parsedWeather,
     schemaVersion,
   };
+}
+
+function parseVec3(value: unknown): Vec3 | null {
+  if (!Array.isArray(value) || value.length !== 3 || !value.every(isNumber)) return null;
+  return [value[0], value[1], value[2]];
+}
+
+// 値が壊れている場合だけ undefined を返す
+function parseForward(value: unknown): Vec3 | null | undefined {
+  if (value === null || value === undefined) return null;
+  return parseVec3(value) ?? undefined;
 }
 
 // 値が壊れている場合だけ undefined を返す（天気を持たない version 1 のファイルは null になる）

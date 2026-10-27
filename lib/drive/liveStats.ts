@@ -129,7 +129,7 @@ export function computeSummaryFromData(
   stats.start(startedAt);
   for (const point of points) stats.addFix(point);
 
-  const cal = createCalibration(calibration.gravity);
+  const cal = createCalibration(calibration.gravity, calibration.forward);
   if (cal) {
     const lowPass = new GForceLowPass(G_DISPLAY_TIME_CONSTANT_MS);
     for (const chunk of chunks) {
