@@ -1,10 +1,12 @@
 import type { GForce } from "../gForce";
+import type { GTrailPoint } from "../gTrail";
 
 // DriveController が保持し、描画ループが毎フレーム参照する
 export interface DriveFrame {
   speedMps: number | null;
   gpsAccuracyM: number | null;
   g: GForce | null;
+  gTrail: readonly GTrailPoint[];
   avgMps: number | null;
   medianMps: number | null;
   maxMps: number | null;
