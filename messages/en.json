@@ -98,6 +98,16 @@
   "home": {
     "title": "Home",
     "startDrive": "Start driving",
+    "stats": {
+      "title": "Distance",
+      "unitLabel": "({unit})",
+      "distance": "Distance",
+      "totalDistance": "Distance",
+      "count": "Drives",
+      "countValue": "{count, number}",
+      "totalDuration": "Drive time",
+      "hoursUnit": "h"
+    },
     "recent": {
       "title": "Recent sessions"
     }

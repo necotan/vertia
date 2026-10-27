@@ -4,29 +4,11 @@ import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { useMemo } from "react";
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CHART_COLORS } from "@/lib/chartColors";
 import type { GpsPoint } from "@/lib/db/schema";
 import { buildSpeedSeries } from "@/lib/drive/speedSeries";
 import { formatDuration } from "@/lib/format";
 import { mpsToUnit, speedUnitOf, useDistanceUnit } from "@/lib/units";
-
-const CHART_COLORS = {
-  light: {
-    line: "#171717",
-    grid: "#e5e5e5",
-    tick: "#737373",
-    tooltipBg: "#ffffff",
-    tooltipBorder: "#e5e5e5",
-    tooltipText: "#0a0a0a",
-  },
-  dark: {
-    line: "#fafafa",
-    grid: "#262626",
-    tick: "#a3a3a3",
-    tooltipBg: "#171717",
-    tooltipBorder: "#262626",
-    tooltipText: "#fafafa",
-  },
-} as const;
 
 const formatElapsed = (seconds: number) => formatDuration(seconds * 1000);
 
