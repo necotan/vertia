@@ -12,7 +12,10 @@
 
 Vertia: a PWA showing real-time speed and G-force from a mounted smartphone, with session recording and review.
 
-`docs/requirements.md` is the source of truth for what to build (screens, data formats, sensor and offline behavior); read the relevant section before implementing. This file covers how to work.
+The specs are the source of truth for what to build; read the relevant section before implementing. This file covers how to work.
+
+- `docs/requirements.md`: screens, sensors, offline behavior, non-functional requirements, open questions. Read it when changing what a screen or sensor does.
+- `docs/data-model.md`: IndexedDB schema, session file, weather data, localStorage keys, and how to change them. Read it before touching `lib/db/`, export/import, or stored settings.
 
 ## Commands
 
@@ -34,7 +37,7 @@ Vertia: a PWA showing real-time speed and G-force from a mounted smartphone, wit
 - `lib/db/`: Dexie schema, repository, export/import. `lib/drive/`: controller, recorder, stats, G-force; `renderer/` draws the Canvas.
 - `public/sw.js`: hand-written Service Worker. Add any new page route to its `PAGES` list.
 - `public/maplibre/`: generated and git-ignored. Do not edit.
-- `docs/` and `CLAUDE.md` are git-ignored, so they have no history. Back them up before rewriting.
+- `docs/`: only the two specs are tracked; anything else there is git-ignored local notes. When behavior or a stored format changes, update the spec in the same change.
 
 ## Rules
 

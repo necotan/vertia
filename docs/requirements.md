@@ -1,6 +1,6 @@
 # Requirements Specification
 
-This document is the source of truth for what Vertia does and why. How to work in this repository (commands, coding and i18n rules) is described in `CLAUDE.md`. UI text is referenced by translation key (`messages/ja.json` / `messages/en.json`); see those files for the actual wording.
+This document is the source of truth for what Vertia does and why. Storage formats (IndexedDB schema, session file, weather data, local settings) are in `docs/data-model.md`. How to work in this repository (commands, coding and i18n rules) is described in `CLAUDE.md`. UI text is referenced by translation key (`messages/ja.json` / `messages/en.json`); see those files for the actual wording.
 
 ## Glossary
 
@@ -13,8 +13,8 @@ This document is the source of truth for what Vertia does and why. How to work i
 | Motion chunk | `MotionChunk` | About one second of motion samples stored together as columns. |
 | Summary | `SessionSummary` | Aggregated values of a session (distance, duration, speed statistics, max G). |
 | Calibration | `SessionCalibration` | Gravity vector and vehicle forward direction used to convert motion data into G-force. |
-| Weather | `SessionWeather` | Weather stored with a session (see 5 and 10.3). |
-| Session file | `format: "vertia-session"` | The export file of one session (see 10.2). |
+| Weather | `SessionWeather` | Weather stored with a session (see 5 and `data-model.md` §3). |
+| Session file | `format: "vertia-session"` | The export file of one session (see `data-model.md` §2). |
 | Drive screen | `/drive`, `DriveScreen` | The screen used while driving (see 7.1). |
 | Session detail screen | `/sessions/detail`, `SessionDetailScreen` | The review screen of one session (see 7.2). |
 
@@ -73,7 +73,7 @@ Feature detection (`lib/sensors/capabilities.ts`, `DriveController`):
 ## 5. Data Storage Policy
 
 - Sessions are stored **only locally in IndexedDB**. There is no cloud sync, no server-side database, and no authentication.
-- Viewing on other devices such as a PC is done with export/import (writing a session file and loading it manually). See 10.2.
+- Viewing on other devices such as a PC is done with export/import (writing a session file and loading it manually). See `data-model.md` §2.
 - Recording is started and stopped **manually only** (automatic detection by speed thresholds or similar is not adopted).
 - The app communicates with exactly two external services. Session data (GPS points, motion chunks) is never sent.
   - OpenFreeMap: map styles and tiles, only on the session detail screen. Tile requests reveal the displayed area at tile precision; coordinate rounding does not apply to them.
@@ -139,7 +139,7 @@ The bottom navigation (`nav.home`, `nav.sessions`, `nav.settings`) is shown on e
   - Delete asks for confirmation (`sessions.detail.delete.confirmTitle`, `sessions.detail.delete.confirmMessage`). It removes the session and all of its GPS points and motion chunks in one transaction, then navigates to `/sessions`.
 - Title: the session's start date and time.
 - Map (route): MapLibre GL JS + OpenFreeMap
-  - Styles: `positron`, `bright`, `liberty`, `dark`, `fiord`, `3d` (`liberty` with a 60° pitch). When no style has been chosen, `positron` is used in light mode and `dark` in dark mode. The chosen style is saved (see 10.4).
+  - Styles: `positron`, `bright`, `liberty`, `dark`, `fiord`, `3d` (`liberty` with a 60° pitch). When no style has been chosen, `positron` is used in light mode and `dark` in dark mode. The chosen style is saved (see `data-model.md` §4).
   - Speed-colored route (`sessions.detail.map.speedColors.toggle`, on by default): the route is colored in 10 speed bands. Palette and scale come from the settings (see 7.5).
   - Fullscreen view and cooperative gestures (`sessions.detail.map.gesture*`).
   - When offline, `sessions.detail.map.offline` is shown instead of the map. When the session has no GPS points, `sessions.detail.map.noPoints` is shown.
@@ -164,7 +164,7 @@ The bottom navigation (`nav.home`, `nav.sessions`, `nav.settings`) is shown on e
 ### 7.4 Sessions Screen
 
 - All sessions, newest first by start time. Each card shows the start date and time, distance, duration, and max speed.
-- Import button (`sessions.import.button`): accepts `.gz` files. On success, the imported session's detail screen opens. Failures show `sessions.import.errors.*` (see 10.2).
+- Import button (`sessions.import.button`): accepts `.gz` files. On success, the imported session's detail screen opens. Failures show `sessions.import.errors.*` (see `data-model.md` §2).
 - When there are no sessions, the empty state (`sessions.empty.*`) is shown with `sessions.empty.action`.
 
 ### 7.5 Settings Screen
@@ -206,89 +206,7 @@ Implementation details (`public/sw.js`, `components/pwa/ServiceWorkerRegister.ts
 
 ## 10. Data Specification
 
-### 10.1 IndexedDB Schema
-
-Database `vertia` (Dexie version 3, `lib/db/schema.ts`). Times are epoch milliseconds; physical values are SI units.
-
-| Store | Primary key | Indexes |
-|---|---|---|
-| `sessions` | `id` | `startedAt`, `status` |
-| `gpsPoints` | `++id` | `sessionId`, `[sessionId+t]` |
-| `motionChunks` | `++id` | `sessionId`, `[sessionId+seq]` |
-
-Dexie version history: 1 = initial stores; 2 = adds `weather` (existing sessions set to `null`); 3 = adds `calibration.forward` (existing sessions set to `null`).
-
-`DriveSession` (`sessions`):
-
-| Field | Type | Notes |
-|---|---|---|
-| `id` | `string` | `crypto.randomUUID()` |
-| `status` | `"recording" \| "completed" \| "interrupted"` | `recording` → `completed` on stop, or → `interrupted` on recovery (11.4) |
-| `startedAt` | `number` | |
-| `endedAt` | `number \| null` | `null` while recording; for interrupted sessions, the last write time |
-| `updatedAt` | `number` | Last write time during recording |
-| `calibration` | `SessionCalibration` | `gravity: Vec3` (m/s², device coordinates); `forward: Vec3 \| null` (unit vector, `null` until estimated) |
-| `summary` | `SessionSummary \| null` | `null` while recording |
-| `weather` | `SessionWeather \| null` | `null` when not fetched (see 10.3) |
-| `schemaVersion` | `number` | `SESSION_SCHEMA_VERSION` (currently 3) at creation |
-
-`SessionSummary`: `distanceM`, `durationMs`, `maxSpeedMps`, `avgSpeedMps`, `medianSpeedMps`, `maxG`, `maxLateralG`, `maxLongitudinalG` (all `number`). Recomputed from stored data when recording stops or a session is recovered, so the whole session uses the final forward direction.
-
-`GpsPoint` (`gpsPoints`): `id?`, `sessionId`, `t` (position timestamp), `lat`, `lng`, `accuracy` (m), `altitude`, `altitudeAccuracy`, `speed` (m/s), `heading` — the last four are `number | null`.
-
-`MotionChunk` (`motionChunks`): about one second of samples.
-
-| Field | Type | Notes |
-|---|---|---|
-| `id?`, `sessionId`, `seq` | `number`, `string`, `number` | `seq` increases from 0 within a session |
-| `t0` | `number` | Time of the first sample (`performance.timeOrigin + event.timeStamp`) |
-| `dt` | `Float32Array` | Offset of each sample from `t0` (ms) |
-| `ax`, `ay`, `az` | `Float32Array` | `accelerationIncludingGravity` (m/s²) |
-| `lax`, `lay`, `laz` | `Float32Array \| null` | `acceleration` (m/s²) |
-| `ra`, `rb`, `rg` | `Float32Array \| null` | `rotationRate` alpha/beta/gamma (deg/s) |
-
-A nullable column is `null` when every sample lacks the value; when only some samples lack it, those entries are `NaN`. All columns in a chunk have the same length.
-
-### 10.2 Session File (Export/Import)
-
-- One session per file. Filename `vertia-YYYYMMDD-HHmm.json.gz` (local start time). Content: gzip-compressed JSON.
-- Requires `CompressionStream` / `DecompressionStream`.
-
-| Field | Content |
-|---|---|
-| `format` | `"vertia-session"` |
-| `version` | `3` (written). Versions 1–3 are accepted on import. |
-| `exportedAt` | Epoch ms |
-| `session` | `DriveSession` as stored |
-| `gpsPoints` | `GpsPoint` without `id` and `sessionId` |
-| `motionChunks` | `MotionChunk` without `id` and `sessionId`; each Float32 column is the base64 of the array's raw bytes, or `null` |
-
-Import (`lib/db/sessionTransfer.ts`):
-
-- The whole file is validated before anything is written, and all rows are written in one transaction. The session keeps its original `id` and `status`.
-- A missing `weather` (version 1 files) or `calibration.forward` is read as `null`. A `session.schemaVersion` newer than the app's is rejected.
-- Results map to `sessions.import.errors.*`: `unsupported` (no compression streams), `invalid` (not a valid session file), `duplicate` (a session with the same `id` already exists), `failed` (write error).
-
-### 10.3 Weather Data
-
-- Stored fields (`SessionWeather`): `observedAt` (observation time from the API, epoch ms), `weatherCode` (WMO code), `temperatureC`, `windSpeedMps`, `lat` / `lng` (the rounded coordinates used for the request).
-- Request: `https://api.open-meteo.com/v1/forecast` with `current=temperature_2m,weather_code,wind_speed_10m`, `wind_speed_unit=ms`, `timeformat=unixtime`, and coordinates rounded to 2 decimal places.
-- While measuring, the app fetches when it has no value, every 15 minutes, or after moving 10 km or more from the last fetched position. After a failure it retries after 60 s. It does not fetch while `navigator.onLine` is false. Each request times out after 8 s.
-- A response with non-finite values or a negative wind speed is treated as a failure.
-- Weather codes are mapped to `weather.codes.*` for display (`lib/weather/weatherCode.ts`). Unit conversion happens at display time.
-
-### 10.4 Local Settings (localStorage)
-
-| Key | Values |
-|---|---|
-| `vertia.locale` | `ja`, `en` |
-| `vertia.distanceUnit` | `km`, `mi` |
-| `vertia.mapStyle` | Map style ID (7.2) |
-| `vertia.routeSpeedColors` | `on`, `off` |
-| `vertia.speedPalette` | `blue`, `standard` |
-| `vertia.speedScale` | `relative`, `absolute` |
-
-The theme is stored by next-themes with its default key. Settings are per device and are not included in session files.
+Moved to `docs/data-model.md`: 10.1 IndexedDB Schema → §1, 10.2 Session File → §2, 10.3 Weather Data → §3, 10.4 Local Settings → §4. The section number is kept so that references to 11 and later stay valid.
 
 ## 11. Non-functional Requirements
 
