@@ -3,11 +3,18 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useLiveQuery } from "dexie-react-hooks";
 import { ChevronLeft, Layers } from "lucide-react";
-import type { GeoJSONSource, MapSourceDataEvent, Map as MapLibreMap, TransformStyleFunction } from "maplibre-gl";
-import { useTranslations } from "next-intl";
+import type {
+  GeoJSONSource,
+  MapSourceDataEvent,
+  Map as MapLibreMap,
+  Marker,
+  TransformStyleFunction,
+} from "maplibre-gl";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { SessionsEmptyState } from "@/components/sessions/SessionsEmptyState";
 import { MapStylePicker } from "@/components/sessions/MapStylePicker";
 import { BackLink } from "@/components/ui/BackLink";
@@ -25,12 +32,15 @@ import {
 } from "@/lib/exploredCells";
 import { fillMissingStyleImages, loadMapLibre, useMapPageBackground, useOnline } from "@/lib/mapLibre";
 import { MAP_STYLES, type MapStyleId, saveMapStyle, themeMapStyle, useSavedMapStyle } from "@/lib/mapStyles";
+import { countCellsInRegion, findRegionAt, type Region, type RegionLevel, toCellCenters } from "@/lib/regions";
 
 const ATTRIBUTION_COLLAPSE_MS = 5000;
 const LOADING_FADE_MS = 400;
 const LOADING_HOLD_MS = 200;
 const MAP_PROGRESS_WEIGHTS = { script: 0.1, style: 0.2, tiles: 0.7 } as const;
 const FINE_MIN_ZOOM = 9;
+// これより縮小すると、中央の都道府県を示しても周りの県と見分けにくい
+const PREFECTURE_MIN_ZOOM = 6;
 const FIT_MAX_ZOOM = 13;
 
 const EXPLORED_COLORS = {
@@ -48,14 +58,20 @@ type ExploredStyle = Pick<StyleSpecification, "sources" | "layers">;
 type ExploredShapes = { fine: MultiPolygonCoordinates; coarse: MultiPolygonCoordinates };
 type ExploredData = { sessions: DriveSession[]; cells: SessionCells[] };
 type Bounds = [number, number, number, number];
+type RegionBadge = { element: HTMLDivElement; marker: Marker };
 
 const LEVELS = ["coarse", "fine"] as const;
+const REGION_SOURCE = "region";
 
 function toFeature(coordinates: MultiPolygonCoordinates) {
   return { type: "Feature", properties: {}, geometry: { type: "MultiPolygon", coordinates } } as const;
 }
 
-function buildExploredStyle(shapes: ExploredShapes, darkStyle: boolean): ExploredStyle {
+function buildExploredStyle(
+  shapes: ExploredShapes,
+  regionCoordinates: MultiPolygonCoordinates,
+  darkStyle: boolean,
+): ExploredStyle {
   const colors = EXPLORED_COLORS[darkStyle ? "dark" : "light"];
   const sources: ExploredStyle["sources"] = {};
   const layers: ExploredStyle["layers"] = [];
@@ -75,7 +91,20 @@ function buildExploredStyle(shapes: ExploredShapes, darkStyle: boolean): Explore
       },
     );
   }
+  sources[REGION_SOURCE] = { type: "geojson", data: toFeature(regionCoordinates) };
+  layers.push({
+    id: `${REGION_SOURCE}-line`,
+    type: "line",
+    source: REGION_SOURCE,
+    layout: { "line-join": "round" },
+    paint: { "line-color": colors.line, "line-width": 3 },
+  });
   return { sources, layers };
+}
+
+function regionLevelAt(zoom: number): RegionLevel | null {
+  if (zoom >= FINE_MIN_ZOOM) return "municipality";
+  return zoom >= PREFECTURE_MIN_ZOOM ? "prefecture" : null;
 }
 
 function applyTiltGestures(map: MapLibreMap, pitch: number) {
@@ -93,6 +122,9 @@ type Phase = "loading" | "fading" | "shown";
 export function ExploredMapScreen() {
   const t = useTranslations("map");
   const tCommon = useTranslations("common");
+  const tUnits = useTranslations("units");
+  const format = useFormatter();
+  const locale = useLocale();
   const { resolvedTheme } = useTheme();
   const online = useOnline();
   const savedStyle = useSavedMapStyle();
@@ -105,6 +137,8 @@ export function ExploredMapScreen() {
   const stopProgressRef = useRef<(() => void) | null>(null);
   const loadingLabelId = useId();
   const [map, setMap] = useState<MapLibreMap | null>(null);
+  const [region, setRegion] = useState<Region | null>(null);
+  const [regionBadge, setRegionBadge] = useState<RegionBadge | null>(null);
   const [styleSheetOpen, setStyleSheetOpen] = useState(false);
   const styleSheetEntryRef = useRef(false);
   // 失敗したセッションを外さないと、次のセッションに進めなくなる
@@ -150,6 +184,13 @@ export function ExploredMapScreen() {
     [explored],
   );
   const bounds = useMemo(() => (shapes ? coordinatesBounds(shapes.fine) : null), [shapes]);
+  const exploredCenters = useMemo(() => toCellCenters(explored?.cells ?? []), [explored]);
+  const regionPercent = useMemo(() => {
+    if (!region || region.cellCount === 0) return null;
+    const ratio = Math.min(countCellsInRegion(region, exploredCenters) / region.cellCount, 1);
+    // 四捨五入すると、全部回っていないのに 100% と表示されることがある
+    return Math.floor(ratio * 1000) / 10;
+  }, [region, exploredCenters]);
 
   // next-themes はマウント前に undefined を返すため、テーマが決まってから地図を描画する
   const theme = resolvedTheme === undefined ? undefined : resolvedTheme === "dark" ? "dark" : "light";
@@ -161,7 +202,10 @@ export function ExploredMapScreen() {
 
   // 値が変わるたびに地図を作り直さないよう、ref で最新の値を参照する
   const shapesRef = useRef(shapes);
+  const regionRef = useRef(region);
   const activeStyleRef = useRef(activeStyle);
+  const attribution = t("regions.attribution");
+  const attributionRef = useRef(attribution);
   const appliedStyleRef = useRef<MapStyleId | null>(null);
   const fittedRef = useRef(false);
   const initialFitRef = useRef<{ bounds: Bounds | null; ready: boolean }>({ bounds: null, ready: false });
@@ -169,9 +213,11 @@ export function ExploredMapScreen() {
 
   useEffect(() => {
     shapesRef.current = shapes;
+    regionRef.current = region;
     activeStyleRef.current = activeStyle;
+    attributionRef.current = attribution;
     initialFitRef.current = { bounds, ready: fitReady };
-  }, [shapes, activeStyle, bounds, fitReady]);
+  }, [shapes, region, activeStyle, attribution, bounds, fitReady]);
 
   const getFitPadding = useCallback(() => {
     const button = backLinkRef.current;
@@ -187,7 +233,7 @@ export function ExploredMapScreen() {
     let cancelled = false;
     let collapseTimer: ReturnType<typeof setTimeout> | undefined;
 
-    void loadMapLibre().then(({ Map }) => {
+    void loadMapLibre().then(({ Map, Marker }) => {
       if (cancelled || activeStyleRef.current === undefined) return;
       setMapProgress(MAP_PROGRESS_WEIGHTS.script);
       const styleAtCreate = activeStyleRef.current;
@@ -205,13 +251,18 @@ export function ExploredMapScreen() {
         pitch: style.pitch,
         dragRotate: style.pitch > 0,
         touchPitch: style.pitch > 0,
-        attributionControl: { compact: true },
+        attributionControl: { compact: true, customAttribution: attributionRef.current },
       });
 
       const loadedMap = created;
       fittedRef.current = initialFit.ready;
       appliedStyleRef.current = styleAtCreate;
       fillMissingStyleImages(loadedMap);
+
+      const badgeElement = document.createElement("div");
+      // 地図をドラッグする指がバッジの上にあっても地図を動かせるようにする
+      badgeElement.className = "pointer-events-none";
+      setRegionBadge({ element: badgeElement, marker: new Marker({ element: badgeElement }) });
 
       let styleLoaded = false;
       const tiles = { started: 0, finished: 0 };
@@ -263,7 +314,7 @@ export function ExploredMapScreen() {
 
         // 読み込み前にスタイルを切り替えた場合は、切り替え時にセルを追加済み
         if (!loadedMap.getSource("explored-fine") && shapesRef.current) {
-          const exploredStyle = buildExploredStyle(shapesRef.current, style.dark);
+          const exploredStyle = buildExploredStyle(shapesRef.current, regionRef.current?.coordinates ?? [], style.dark);
           for (const [id, source] of Object.entries(exploredStyle.sources)) loadedMap.addSource(id, source);
           for (const layer of exploredStyle.layers) loadedMap.addLayer(layer);
         }
@@ -278,6 +329,8 @@ export function ExploredMapScreen() {
       stopProgressRef.current = null;
       created?.remove();
       setMap(null);
+      setRegion(null);
+      setRegionBadge(null);
       setPhase("loading");
       setMapProgress(0);
       setProgressFloor(0);
@@ -290,6 +343,42 @@ export function ExploredMapScreen() {
       map.getSource<GeoJSONSource>(`explored-${level}`)?.setData(toFeature(shapes[level]));
     }
   }, [map, shapes]);
+
+  // 動かし終えたときの中央の市区町村 (縮小時は都道府県) を出す
+  useEffect(() => {
+    if (!map) return;
+    let request = 0;
+    const update = () => {
+      const level = regionLevelAt(map.getZoom());
+      const center = map.getCenter();
+      request += 1;
+      const current = request;
+      (level ? findRegionAt(level, center) : Promise.resolve(null))
+        .then((found) => {
+          if (current !== request) return;
+          setRegion((previous) => (previous?.level === found?.level && previous?.id === found?.id ? previous : found));
+        })
+        // 境界を読み込めなかったときは、前の表示を残す
+        .catch(() => undefined);
+    };
+    update();
+    map.on("moveend", update);
+    return () => {
+      request += 1;
+      map.off("moveend", update);
+    };
+  }, [map]);
+
+  useEffect(() => {
+    map?.getSource<GeoJSONSource>(REGION_SOURCE)?.setData(toFeature(region?.coordinates ?? []));
+  }, [map, region]);
+
+  const regionLabelPoint = phase === "loading" ? null : (region?.labelPoint ?? null);
+  useEffect(() => {
+    if (!map || !regionBadge) return;
+    if (regionLabelPoint) regionBadge.marker.setLngLat(regionLabelPoint).addTo(map);
+    else regionBadge.marker.remove();
+  }, [map, regionBadge, regionLabelPoint]);
 
   // 計算の途中で合わせると範囲が欠けるため、終わってから1回だけ移動し、以降は利用者が動かした位置を保つ
   useEffect(() => {
@@ -314,7 +403,7 @@ export function ExploredMapScreen() {
       map.setStyle(style.url, {
         transformStyle: (_previous, next) => {
           if (!shapesRef.current) return next;
-          const exploredStyle = buildExploredStyle(shapesRef.current, style.dark);
+          const exploredStyle = buildExploredStyle(shapesRef.current, regionRef.current?.coordinates ?? [], style.dark);
           return {
             ...next,
             sources: { ...next.sources, ...exploredStyle.sources },
@@ -462,7 +551,23 @@ export function ExploredMapScreen() {
         >
           <Layers className="size-5" />
         </button>
+        {region && (
+          <p className="absolute left-[calc(env(safe-area-inset-left)+72px)] right-[calc(env(safe-area-inset-right)+72px)] top-[calc(env(safe-area-inset-top)+40px)] truncate text-lg font-bold leading-10 text-foreground">
+            {locale === "ja" ? region.name : region.nameEn}
+          </p>
+        )}
       </div>
+      {regionBadge &&
+        regionPercent !== null &&
+        createPortal(
+          <div className="rounded-xl border border-border bg-background/90 px-3 py-1 text-foreground shadow-sm backdrop-blur-md">
+            <span className="font-mono text-xl font-bold tabular-nums">
+              {format.number(regionPercent, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+            </span>
+            <span className="ml-0.5 text-xs text-muted-foreground">{tUnits("percent")}</span>
+          </div>,
+          regionBadge.element,
+        )}
       {activeStyle !== undefined && (
         <BottomSheet
           open={styleSheetOpen}

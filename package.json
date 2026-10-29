@@ -8,6 +8,7 @@
   "scripts": {
     "copy:maplibre-worker": "node scripts/copyMaplibreWorker.mjs",
     "generate:icons": "node scripts/generateIcons.mjs",
+    "generate:boundaries": "node --max-old-space-size=8192 scripts/generateBoundaries.mjs",
     "predev": "npm run copy:maplibre-worker",
     "dev": "next dev",
     "prebuild": "npm run copy:maplibre-worker",
@@ -37,6 +38,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
+    "mapshaper": "0.7.86",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

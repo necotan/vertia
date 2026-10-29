@@ -101,6 +101,7 @@
 | `npm run lint` | ESLint を実行 |
 | `npm run copy:maplibre-worker` | MapLibre の Worker を `public/maplibre/` にコピーする |
 | `npm run generate:icons` | `assets/vertia-icon.png` からファビコン・Apple 用・PWA 用のアイコンを生成する |
+| `npm run generate:boundaries -- <.shp> <.csv>` | 国土数値情報の行政区域データから、マップ画面の市区町村・都道府県の境界を `public/boundaries/` に生成する |
 
 ### ディレクトリ構成
 
@@ -122,13 +123,14 @@ lib/
   sensors/            位置情報、モーションセンサー、Wake Lock
   i18n/               言語設定
   exploredCells.ts    走行ルートから通った H3 セルを計算
+  regions.ts          地図の中央の市区町村・都道府県の検索と探索率の計算
   mapLibre.ts         MapLibre の読み込みと地図の共通処理
   fonts.ts            フォントの定義
   format.ts           経過時間の表示フォーマット
   geo.ts              2 点間の距離計算、m/s から km/h 変換
 messages/             翻訳（ja.json / en.json）
-scripts/              アイコン生成、MapLibre の Worker のコピー
-public/               Service Worker、PWA 用アイコン
+scripts/              アイコン・境界データの生成、MapLibre の Worker のコピー
+public/               Service Worker、PWA 用アイコン、市区町村・都道府県の境界（boundaries/）
 ```
 
 ### MapLibre の Worker について
@@ -139,6 +141,17 @@ Turbopack は MapLibre GL JS v6 の Worker の URL を解決できません。�
 
 - `app/favicon.ico`、`app/icon.png`、`app/apple-icon.png`
 - `public/icons/icon-192.png`、`icon-512.png`、`icon-maskable-512.png`
+
+### 境界データの更新
+マップ画面の市区町村・都道府県の境界は、[国土数値情報 行政区域データ](https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-2025.html)（N03）から生成しています。英語名は日本郵便の[郵便番号データ（ローマ字）](https://www.post.japanpost.jp/service/search/zipcode/download/roman-zip.html)から付けています。市町村合併などで更新するときは、N03 の全国データ（zip、約 600MB）と `KEN_ALL_ROME.zip` をダウンロードして展開し、`.shp` と `.CSV` のパスを渡して実行します。
+
+```bash
+npm run generate:boundaries -- path/to/N03-20250101.shp path/to/KEN_ALL_ROME.CSV
+```
+
+英語名が見つからない市区町村があると、一覧を出して止まります。`scripts/generateBoundaries.mjs` の `ENGLISH_NAME_OVERRIDES` に足してください。
+
+市区町村ごと・都道府県ごとの境界（`public/boundaries/municipality/`、`prefecture/`）と、名前・範囲・セル数の一覧（`index.json`）を生成し直します。`lib/exploredCells.ts` の `CELL_RESOLUTION` を変えたときも生成し直してください。
 
 ## 技術スタック・クレジット (Tech Stack & Credits)
 このプロジェクトは以下の技術およびオープンソースライブラリを使用しています。
@@ -155,6 +168,8 @@ Turbopack は MapLibre GL JS v6 の Worker の URL を解決できません。�
 - **Hosting**: [Vercel](https://vercel.com/)
 
 地図データは © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors、タイルは OpenFreeMap / [OpenMapTiles](https://openmaptiles.org/) を利用しています。地図上にも出典を表示しています。
+
+市区町村・都道府県の境界は「[国土数値情報（行政区域データ）](https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-2025.html)」（国土交通省、CC BY 4.0）を加工して作成しています。簡略化には [mapshaper](https://github.com/mbloch/mapshaper) を使っています。英語名は日本郵便の郵便番号データ（ローマ字）をもとにしています。
 
 ## 免責事項 (Disclaimer)
 

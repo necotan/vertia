@@ -124,6 +124,9 @@
     "loading": {
       "label": "Loading...",
       "percent": "{percent}%"
+    },
+    "regions": {
+      "attribution": "Boundaries: National Land Numerical Information (MLIT), processed"
     }
   },
   "settings": {
@@ -217,6 +220,7 @@
     "celsius": "°C",
     "fahrenheit": "°F",
     "m": "m",
-    "g": "G"
+    "g": "G",
+    "percent": "%"
   }
 }
