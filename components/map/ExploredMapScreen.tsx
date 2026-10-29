@@ -2,12 +2,12 @@
 
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useLiveQuery } from "dexie-react-hooks";
-import { ChevronLeft, Layers, Map as MapIcon } from "lucide-react";
-import type { GeoJSONSource, Map as MapLibreMap, TransformStyleFunction } from "maplibre-gl";
+import { ChevronLeft, Layers } from "lucide-react";
+import type { GeoJSONSource, MapSourceDataEvent, Map as MapLibreMap, TransformStyleFunction } from "maplibre-gl";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { SessionsEmptyState } from "@/components/sessions/SessionsEmptyState";
 import { MapStylePicker } from "@/components/sessions/MapStylePicker";
 import { BackLink } from "@/components/ui/BackLink";
@@ -27,7 +27,9 @@ import { fillMissingStyleImages, loadMapLibre, useMapPageBackground, useOnline }
 import { MAP_STYLES, type MapStyleId, saveMapStyle, themeMapStyle, useSavedMapStyle } from "@/lib/mapStyles";
 
 const ATTRIBUTION_COLLAPSE_MS = 5000;
-const PLACEHOLDER_FADE_MS = 300;
+const LOADING_FADE_MS = 400;
+const LOADING_HOLD_MS = 200;
+const MAP_PROGRESS_WEIGHTS = { script: 0.1, style: 0.2, tiles: 0.7 } as const;
 const FINE_MIN_ZOOM = 9;
 const FIT_MAX_ZOOM = 13;
 
@@ -97,6 +99,11 @@ export function ExploredMapScreen() {
   const containerRef = useRef<HTMLDivElement>(null);
   const backLinkRef = useRef<HTMLAnchorElement>(null);
   const [phase, setPhase] = useState<Phase>("loading");
+  const [mapProgress, setMapProgress] = useState(0);
+  const [progressFloor, setProgressFloor] = useState(0);
+  const [pendingTotal, setPendingTotal] = useState(0);
+  const stopProgressRef = useRef<(() => void) | null>(null);
+  const loadingLabelId = useId();
   const [map, setMap] = useState<MapLibreMap | null>(null);
   const [styleSheetOpen, setStyleSheetOpen] = useState(false);
   const styleSheetEntryRef = useRef(false);
@@ -132,6 +139,8 @@ export function ExploredMapScreen() {
   }, [nextPendingId]);
 
   const computing = nextPendingId !== undefined;
+  const pendingCount = explored?.pending.length ?? 0;
+  if (pendingCount > pendingTotal) setPendingTotal(pendingCount);
   const shapes = useMemo<ExploredShapes | null>(
     () =>
       explored && {
@@ -180,6 +189,7 @@ export function ExploredMapScreen() {
 
     void loadMapLibre().then(({ Map }) => {
       if (cancelled || activeStyleRef.current === undefined) return;
+      setMapProgress(MAP_PROGRESS_WEIGHTS.script);
       const styleAtCreate = activeStyleRef.current;
       const style = MAP_STYLES[styleAtCreate];
       const initialFit = initialFitRef.current;
@@ -202,8 +212,49 @@ export function ExploredMapScreen() {
       fittedRef.current = initialFit.ready;
       appliedStyleRef.current = styleAtCreate;
       fillMissingStyleImages(loadedMap);
+
+      let styleLoaded = false;
+      const tiles = { started: 0, finished: 0 };
+      const reportProgress = () => {
+        const tileRatio = tiles.started === 0 ? 0 : Math.min(tiles.finished / tiles.started, 1);
+        setMapProgress(
+          MAP_PROGRESS_WEIGHTS.script +
+            (styleLoaded ? MAP_PROGRESS_WEIGHTS.style : 0) +
+            MAP_PROGRESS_WEIGHTS.tiles * tileRatio,
+        );
+      };
+      const handleStyleLoad = () => {
+        styleLoaded = true;
+        reportProgress();
+      };
+      const handleTileStart = (event: MapSourceDataEvent) => {
+        if (!event.tile) return;
+        tiles.started += 1;
+        reportProgress();
+      };
+      // 読み込みを始めたタイルは、完了、中断、エラーのいずれかで終了する
+      const handleTileEnd = (event: object) => {
+        if (!("tile" in event) || !event.tile) return;
+        tiles.finished += 1;
+        reportProgress();
+      };
+      loadedMap.on("style.load", handleStyleLoad);
+      loadedMap.on("sourcedataloading", handleTileStart);
+      loadedMap.on("sourcedata", handleTileEnd);
+      loadedMap.on("sourcedataabort", handleTileEnd);
+      loadedMap.on("error", handleTileEnd);
+      // 表示後もタイルを読み込むたびに再描画しないよう、閉じたら外す
+      stopProgressRef.current = () => {
+        loadedMap.off("style.load", handleStyleLoad);
+        loadedMap.off("sourcedataloading", handleTileStart);
+        loadedMap.off("sourcedata", handleTileEnd);
+        loadedMap.off("sourcedataabort", handleTileEnd);
+        loadedMap.off("error", handleTileEnd);
+      };
+
       loadedMap.on("load", () => {
-        setPhase("fading");
+        // 未移動なら、移動先のタイルを待つため閉じない
+        if (fittedRef.current) setPhase("fading");
         collapseTimer = setTimeout(() => {
           container
             .querySelector(".maplibregl-ctrl-attrib.maplibregl-compact-show")
@@ -224,9 +275,12 @@ export function ExploredMapScreen() {
       cancelled = true;
       clearTimeout(collapseTimer);
       appliedStyleRef.current = null;
+      stopProgressRef.current = null;
       created?.remove();
       setMap(null);
       setPhase("loading");
+      setMapProgress(0);
+      setProgressFloor(0);
     };
   }, [mapVisible, getFitPadding]);
 
@@ -241,7 +295,11 @@ export function ExploredMapScreen() {
   useEffect(() => {
     if (!map || computing || explored === null || fittedRef.current) return;
     fittedRef.current = true;
-    if (bounds) map.fitBounds(bounds, { padding: getFitPadding(), maxZoom: FIT_MAX_ZOOM });
+    // 読み込み画面の裏で移動する
+    if (bounds) map.fitBounds(bounds, { padding: getFitPadding(), maxZoom: FIT_MAX_ZOOM, animate: false });
+    // idle は描画後にしか発火しないため、移動しない場合も描画させる
+    map.once("idle", () => setPhase("fading"));
+    map.triggerRepaint();
   }, [map, computing, explored, bounds, getFitPadding]);
 
   useEffect(() => {
@@ -269,13 +327,25 @@ export function ExploredMapScreen() {
     if (MAP_STYLES[previousStyle].pitch !== style.pitch) map.easeTo({ pitch: style.pitch, bearing: 0 });
   }, [map, activeStyle]);
 
-  useMapPageBackground(mapLayout && activeStyle !== undefined ? MAP_STYLES[activeStyle].swatch.background : null);
+  // 上部のぼかしの色を読み込み画面に揃える
+  useMapPageBackground(
+    mapLayout && activeStyle !== undefined && phase !== "loading" ? MAP_STYLES[activeStyle].swatch.background : null,
+  );
 
   useEffect(() => {
+    if (phase === "loading") return;
+    stopProgressRef.current?.();
+    stopProgressRef.current = null;
     if (phase !== "fading") return;
-    const timer = setTimeout(() => setPhase("shown"), PLACEHOLDER_FADE_MS);
+    const timer = setTimeout(() => setPhase("shown"), LOADING_HOLD_MS + LOADING_FADE_MS);
     return () => clearTimeout(timer);
   }, [phase]);
+
+  const rawProgress = pendingTotal === 0 ? mapProgress : (1 - pendingCount / pendingTotal + mapProgress) / 2;
+  // 読み込むタイルが増えると割合が下がるため、表示は戻さない
+  const loadingProgress = Math.max(progressFloor, Math.min(rawProgress, 0.99));
+  if (loadingProgress > progressFloor) setProgressFloor(loadingProgress);
+  const progressPercent = phase === "loading" ? Math.floor(loadingProgress * 100) : 100;
 
   const openStyleSheet = () => {
     // 戻る操作でシートだけを閉じられるようにする
@@ -328,6 +398,10 @@ export function ExploredMapScreen() {
 
   // フェードの終了まで待つと、ボタンのない地図が一瞬見えるため
   const controlsVisible = phase !== "loading";
+  const fadeStyle = {
+    transitionDuration: `${LOADING_FADE_MS}ms`,
+    transitionDelay: controlsVisible ? `${LOADING_HOLD_MS}ms` : "0ms",
+  };
 
   return (
     // iOS のホーム画面アプリでは fixed がずれるため、AppShell の枠に absolute で広げる
@@ -336,13 +410,30 @@ export function ExploredMapScreen() {
       {/* MapLibre の CSS が position: relative を指定するため、absolute ではなく size-full で広げる */}
       <div ref={containerRef} className="size-full" />
       {phase !== "shown" && (
+        // 直前の画面から続けて見えるよう、地図の種類ではなくアプリのテーマに合わせる
         <div
-          aria-hidden
-          className={`skeleton pointer-events-none absolute inset-0 z-10 flex items-center justify-center transition-opacity ${phase === "fading" ? "opacity-0" : ""}`}
-          style={{ transitionDuration: `${PLACEHOLDER_FADE_MS}ms` }}
+          className={`${theme ?? ""} pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background text-foreground transition-opacity ${phase === "fading" ? "opacity-0" : ""}`}
+          style={fadeStyle}
         >
-          {/* シマーの ::after より手前に出すため */}
-          <MapIcon className="relative size-10 text-muted-foreground" />
+          <p id={loadingLabelId} className="text-sm">
+            {t("loading.label")}
+          </p>
+          <div
+            role="progressbar"
+            aria-labelledby={loadingLabelId}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={progressPercent}
+            className="h-1 w-48 overflow-hidden rounded-full bg-muted"
+          >
+            <div
+              className="h-full origin-left bg-foreground transition-transform ease-out"
+              style={{ transform: `scaleX(${progressPercent / 100})`, transitionDuration: `${LOADING_HOLD_MS}ms` }}
+            />
+          </div>
+          <p className="text-xs tabular-nums text-muted-foreground">
+            {t("loading.percent", { percent: progressPercent })}
+          </p>
         </div>
       )}
       {/* 地図の読み込みに失敗しても戻れるよう、読み込み中も出す */}
@@ -360,7 +451,7 @@ export function ExploredMapScreen() {
       <div
         inert={!controlsVisible}
         className={`pointer-events-none absolute inset-0 z-20 transition-opacity ${controlsVisible ? "" : "opacity-0"}`}
-        style={{ transitionDuration: `${PLACEHOLDER_FADE_MS}ms` }}
+        style={fadeStyle}
       >
         <button
           type="button"

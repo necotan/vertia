@@ -120,6 +120,10 @@
       "open": "地図の種類を選択",
       "title": "地図の種類",
       "close": "閉じる"
+    },
+    "loading": {
+      "label": "読み込み中...",
+      "percent": "{percent}%"
     }
   },
   "settings": {
