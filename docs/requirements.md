@@ -66,6 +66,9 @@ Feature detection (`lib/sensors/capabilities.ts`, `DriveController`):
   - Reason: no API key and no usage limits. Preferred over the official OSM tiles because it works better with offline caching.
 - **Hexagonal grid (map screen)**: h3-js (H3)
   - Reason: a standard global grid with stable cell IDs that can be cached per session, and it can merge cells into one outline (`cellsToMultiPolygon`). Runs locally; no network access.
+- **Municipality and prefecture boundaries (map screen)**: National Land Numerical Information, Administrative Areas (N03, MLIT), simplified with mapshaper (dev dependency) by `scripts/generateBoundaries.mjs` into `public/boundaries/`
+  - Reason: open data (CC BY 4.0) with polygons and official codes for every municipality. The OpenFreeMap tiles have boundary lines only, without areas or names. The raw data is about 600 MB, so it is simplified once at development time and served as static files.
+  - English names: N03 has no English names, so they come from Japan Post's romanized postal code data (`KEN_ALL_ROME.CSV`, freely distributable). The script keeps the name without its type (市, 町, 県, and so on) and writes the syllabic n as "n" before b, m, and p (Gunma, not Gumma). Names that the postal data lacks are set in the script.
 - **Charts**: Recharts (speed chart on the session detail screen, monthly distance chart on the home screen)
 - **Weather**: Open-Meteo
   - Reason: no API key and free for non-commercial use. Used to get the weather, temperature, and wind speed when recording starts.
@@ -80,6 +83,7 @@ Feature detection (`lib/sensors/capabilities.ts`, `DriveController`):
 - The app communicates with exactly two external services. Session data (GPS points, motion chunks) is never sent.
   - OpenFreeMap: map styles and tiles, only on the session detail and map screens. Tile requests reveal the displayed area at tile precision; coordinate rounding does not apply to them.
   - Open-Meteo: weather. Only coordinates rounded to 2 decimal places (about 1 km) are sent.
+- Boundary data (`public/boundaries/`) is served from the app's own origin, so it is not an external request. Only the files for the region at the map center are fetched.
 - The weather, temperature, and wind speed at the start of recording are stored in the session and shown on the session detail screen. Sessions without weather are treated as having no weather.
   - The stored value is the latest weather the app holds when recording starts (fetched while measuring, at most 15 minutes earlier). If none is held yet, the first value fetched after recording starts is used. It is written once per session.
   - A weather fetch failure never stops recording.
@@ -193,6 +197,10 @@ Shows every area the user has driven, as hexagonal H3 cells on a fullscreen map.
 - Drawing: the union of all cells is drawn as one filled outline, without borders between neighboring cells. Below zoom 9, the cells are merged into their resolution 6 parents.
 - On first display, the map fits the bounds of all cells after the computation finishes. With no cells, it shows Japan.
 - Loading screen: until the cell computation finishes and the map has rendered its tiles at the fitted bounds, a monochrome loading screen in the app theme covers the map. It shows `map.loading.label` above a progress bar and `map.loading.percent` below it. The percentage combines the cell computation (sessions done) and the map loading (MapLibre script, style, tiles), never decreases, and reaches 100% only when loading is complete. The screen then fades out. The back button stays visible above it.
+- Region: when the map stops moving, the municipality at the map center is shown (the prefecture at zoom 6 to 9; nothing below zoom 6). Designated cities are one region (not split into wards); Tokyo's special wards are separate regions.
+  - Its name is shown at the top, between the back button and `map.styles.open`. Its outline is drawn as a line, and a badge with the explored rate (`units.percent`) is placed at the cell center nearest the region's centroid.
+  - Explored rate: explored cells whose centers are inside the region, divided by all resolution 8 cells whose centers are inside the region. It is rounded down to one decimal place, so it shows 100.0 only when every cell is explored. The cell count and the badge position are computed when the boundaries are generated.
+  - Names: Japanese shows the N03 name (沼津市, 静岡県); English shows the romanized name without its type (Numazu, Shizuoka). The attribution `map.regions.attribution` is added to the map attribution.
 - Layout: the same as the session detail map in fullscreen, without the speed colors. A back button (`common.back`, to `/`) is at the top left and `map.styles.open` at the top right. The bottom navigation is hidden.
 - Map style: the same styles and saved choice as the session detail screen (7.2). Gestures are not cooperative (one finger moves the map).
 - When there are no target sessions, the empty state (`sessions.empty.*`) is shown with `sessions.empty.action`. When offline, `map.offline` is shown.
