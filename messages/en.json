@@ -120,6 +120,10 @@
       "open": "Choose map style",
       "title": "Map Style",
       "close": "Close"
+    },
+    "loading": {
+      "label": "Loading...",
+      "percent": "{percent}%"
     }
   },
   "settings": {
