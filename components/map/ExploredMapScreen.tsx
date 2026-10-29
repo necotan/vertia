@@ -525,8 +525,11 @@ export function ExploredMapScreen() {
           </p>
         </div>
       )}
-      {/* 地図の読み込みに失敗しても戻れるよう、読み込み中も出す */}
-      <div className="pointer-events-none absolute inset-0 z-20">
+      <div
+        inert={!controlsVisible}
+        className={`pointer-events-none absolute inset-0 z-20 transition-opacity ${controlsVisible ? "" : "opacity-0"}`}
+        style={fadeStyle}
+      >
         <Link
           ref={backLinkRef}
           href="/"
@@ -536,12 +539,6 @@ export function ExploredMapScreen() {
         >
           <ChevronLeft size={22} className="-translate-x-px" />
         </Link>
-      </div>
-      <div
-        inert={!controlsVisible}
-        className={`pointer-events-none absolute inset-0 z-20 transition-opacity ${controlsVisible ? "" : "opacity-0"}`}
-        style={fadeStyle}
-      >
         <button
           type="button"
           aria-label={t("styles.open")}
