@@ -10,6 +10,7 @@
     "label": "Main navigation",
     "home": "Home",
     "sessions": "Sessions",
+    "map": "Map",
     "settings": "Settings"
   },
   "sessions": {
@@ -110,6 +111,15 @@
     },
     "recent": {
       "title": "Recent sessions"
+    }
+  },
+  "map": {
+    "title": "Map",
+    "offline": "The map is unavailable while offline",
+    "styles": {
+      "open": "Choose map style",
+      "title": "Map Style",
+      "close": "Close"
     }
   },
   "settings": {

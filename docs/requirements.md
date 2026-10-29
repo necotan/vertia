@@ -62,8 +62,10 @@ Feature detection (`lib/sensors/capabilities.ts`, `DriveController`):
 - **Drive screen rendering**: direct Canvas API drawing (not through React re-rendering, to avoid performance degradation from high-frequency updates)
 - **Screen sleep prevention**: Screen Wake Lock API
 - **Local storage**: IndexedDB via Dexie.js (`dexie`, with `dexie-react-hooks` for live queries)
-- **Map (session detail screen only)**: MapLibre GL JS + OpenFreeMap
+- **Map (session detail and map screens)**: MapLibre GL JS + OpenFreeMap
   - Reason: no API key and no usage limits. Preferred over the official OSM tiles because it works better with offline caching.
+- **Hexagonal grid (map screen)**: h3-js (H3)
+  - Reason: a standard global grid with stable cell IDs that can be cached per session, and it can merge cells into one outline (`cellsToMultiPolygon`). Runs locally; no network access.
 - **Charts**: Recharts (speed chart on the session detail screen, monthly distance chart on the home screen)
 - **Weather**: Open-Meteo
   - Reason: no API key and free for non-commercial use. Used to get the weather, temperature, and wind speed when recording starts.
@@ -76,7 +78,7 @@ Feature detection (`lib/sensors/capabilities.ts`, `DriveController`):
 - Viewing on other devices such as a PC is done with export/import (writing a session file and loading it manually). See `data-model.md` §2.
 - Recording is started and stopped **manually only** (automatic detection by speed thresholds or similar is not adopted).
 - The app communicates with exactly two external services. Session data (GPS points, motion chunks) is never sent.
-  - OpenFreeMap: map styles and tiles, only on the session detail screen. Tile requests reveal the displayed area at tile precision; coordinate rounding does not apply to them.
+  - OpenFreeMap: map styles and tiles, only on the session detail and map screens. Tile requests reveal the displayed area at tile precision; coordinate rounding does not apply to them.
   - Open-Meteo: weather. Only coordinates rounded to 2 decimal places (about 1 km) are sent.
 - The weather, temperature, and wind speed at the start of recording are stored in the session and shown on the session detail screen. Sessions without weather are treated as having no weather.
   - The stored value is the latest weather the app holds when recording starts (fetched while measuring, at most 15 minutes earlier). If none is held yet, the first value fetched after recording starts is used. It is written once per session.
@@ -102,9 +104,10 @@ Feature detection (`lib/sensors/capabilities.ts`, `DriveController`):
 | `/drive` | Drive | 7.1 |
 | `/sessions` | Sessions | 7.4 |
 | `/sessions/detail?id=<sessionId>` | Session detail | 7.2 |
+| `/map` | Map | 7.6 |
 | `/settings` | Settings | 7.5 |
 
-The bottom navigation (`nav.home`, `nav.sessions`, `nav.settings`) is shown on every screen except `/drive`.
+The bottom navigation (`nav.home`, `nav.sessions`, `nav.map`, `nav.settings`) is shown on every screen except `/drive` and `/map`.
 
 ### 7.1 Drive Screen
 
@@ -180,9 +183,22 @@ The bottom navigation (`nav.home`, `nav.sessions`, `nav.settings`) is shown on e
 - The distance unit also switches the other units: `km` → km/h, °C, m/s for wind; `mi` → mph, °F, mph for wind. Values are stored in SI units and converted for display.
 - Absolute speed thresholds: `km` 20, 40, …, 180 km/h; `mi` 10, 20, 30, 40, 50, 60, 75, 90, 110 mph.
 
+### 7.6 Map Screen
+
+Shows every area the user has driven, as hexagonal H3 cells on a fullscreen map.
+
+- Target sessions: sessions that have a summary (`completed` and `interrupted`). Sessions still recording are excluded.
+- Cells: H3 resolution 8 (edge about 0.46 km), from GPS points with accuracy of 50 m or better (same filter as the route, see 11.2). When two consecutive points are in cells that are not neighbors and at most 5 km apart (for example, after a tunnel), the cells between them are filled in.
+- Each session's cells are computed once and cached in IndexedDB (`data-model.md` §1). Sessions without a current cache are computed one at a time when this screen opens, and the map updates as each session finishes.
+- Drawing: the union of all cells is drawn as one filled outline, without borders between neighboring cells. Below zoom 9, the cells are merged into their resolution 6 parents.
+- On first display, the map fits the bounds of all cells after the computation finishes. With no cells, it shows Japan.
+- Layout: the same as the session detail map in fullscreen, without the speed colors. A back button (`common.back`, to `/`) is at the top left and `map.styles.open` at the top right. The bottom navigation is hidden.
+- Map style: the same styles and saved choice as the session detail screen (7.2). Gestures are not cooperative (one finger moves the map).
+- When there are no target sessions, the empty state (`sessions.empty.*`) is shown with `sessions.empty.action`. When offline, `map.offline` is shown.
+
 ## 8. Offline Behavior (Service Worker)
 
-- When the Service Worker is installed, all screens (home, drive, sessions, session detail, settings) and the build assets those screens load are saved.
+- When the Service Worker is installed, all screens (home, drive, sessions, session detail, map, settings) and the build assets those screens load are saved.
 - The drive screen can measure and record offline.
 - The session detail screen is a single static page for all sessions (`/sessions/detail?id=<sessionId>`), so any session can be viewed offline.
 - Screens are fetched network-first. If there is no response within 3 seconds, the saved screen is shown (to avoid waiting when the signal is weak).
@@ -238,7 +254,7 @@ After an error, measuring can be restarted with `drive.start`. On iOS, the motio
 
 - During recording, buffered data is written every 1 s in one transaction, which also updates `updatedAt`. Failed writes are retried on the next write; the first failure shows `drive.errors.saveFailed` once and recording continues.
 - When recording stops, data that still cannot be written causes `drive.errors.saveFailed`, and the session stays `recording` until recovered.
-- Recovery: a `recording` session whose `updatedAt` is more than 10 s old is changed to `interrupted`, with `endedAt = updatedAt` and a summary recomputed from stored data. This runs when the home, sessions, or drive screen opens.
+- Recovery: a `recording` session whose `updatedAt` is more than 10 s old is changed to `interrupted`, with `endedAt = updatedAt` and a summary recomputed from stored data. This runs when the home, sessions, map, or drive screen opens.
 - The app does not check the storage quota or request persistent storage. Storage upper limit: TBD. Maximum recording duration: TBD.
 
 ### 11.5 Security Headers

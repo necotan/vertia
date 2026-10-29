@@ -80,12 +80,22 @@ export interface MotionChunk {
   rg: Float32Array | null;
 }
 
+// GPS 点から作り直せるキャッシュのため、セッションファイルには含めない
+export interface SessionCells {
+  sessionId: string;
+  resolution: number;
+  // 計算方法を変えたときに古いキャッシュを見分ける
+  algorithmVersion: number;
+  cells: string[];
+}
+
 export const SESSION_SCHEMA_VERSION = 3;
 
 class VertiaDatabase extends Dexie {
   sessions!: EntityTable<DriveSession, "id">;
   gpsPoints!: EntityTable<GpsPoint, "id">;
   motionChunks!: EntityTable<MotionChunk, "id">;
+  sessionCells!: EntityTable<SessionCells, "sessionId">;
 
   constructor() {
     super("vertia");
@@ -115,6 +125,8 @@ class VertiaDatabase extends Dexie {
             session.calibration.forward = null;
           }),
       );
+    // 既存のセッションはマップ画面で計算するため、upgrade は不要
+    this.version(4).stores({ sessionCells: "sessionId" });
   }
 }
 
