@@ -34,6 +34,8 @@
 
 走り終えたら、記録ごとに走行ルートの地図と速度の推移グラフを描画します。距離・時間・速度・G の集計も同じ画面に出ます。記録 1 件を gzip 圧縮した JSON（`vertia-YYYYMMDD-HHmm.json.gz`）にエクスポートすることで、別の端末にインポートできます。
 
+マップ画面では、これまでに記録したすべての走行で通った場所を、六角形のエリア（H3）で地図に塗って表示します。
+
 データはすべて端末の IndexedDB に保存し、サーバーには送りません。表示は日本語と English、テーマはライト / ダーク / システムから選べます。
 
 ## 対応端末
@@ -109,6 +111,7 @@ components/
   drive/              走行画面
   home/               ホーム
   sessions/           記録一覧・詳細・地図・速度グラフ
+  map/                マップ
   settings/           設定
   layout/             下部ナビ、Provider
   pwa/                Service Worker の登録
@@ -119,6 +122,8 @@ lib/
   drive/renderer/     Canvas の描画
   sensors/            位置情報、モーションセンサー、Wake Lock
   i18n/               言語設定
+  exploredCells.ts    走行ルートから通った H3 セルを計算
+  mapLibre.ts         MapLibre の読み込みと地図の共通処理
   fonts.ts            フォントの定義
   format.ts           経過時間の表示フォーマット
   geo.ts              2 点間の距離計算、m/s から km/h 変換
@@ -144,6 +149,7 @@ Turbopack は MapLibre GL JS v6 の Worker の URL を解決できません。�
 - **Rendering**: Canvas API
 - **Storage**: IndexedDB / [Dexie.js](https://dexie.org/)
 - **Map**: [MapLibre GL JS](https://maplibre.org/) / [OpenFreeMap](https://openfreemap.org/)
+- **Hexagonal Grid**: [h3-js](https://github.com/uber/h3-js) (Licensed under Apache-2.0)
 - **Charts**: [Recharts](https://recharts.org/)
 - **i18n & Theme**: [next-intl](https://next-intl.dev/) / [next-themes](https://github.com/pacocoursey/next-themes)
 - **Icons**: [Lucide React](https://lucide.dev/) (Licensed under ISC)

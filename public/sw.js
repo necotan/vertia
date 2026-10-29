@@ -3,7 +3,7 @@
 // ?v= はデプロイごとに変わるバージョン
 const VERSION = new URL(self.location.href).searchParams.get("v") || "dev";
 const CACHE_NAME = `vertia-${VERSION}`;
-const PAGES = ["/", "/drive", "/sessions", "/sessions/detail", "/settings"];
+const PAGES = ["/", "/drive", "/sessions", "/sessions/detail", "/map", "/settings"];
 const ASSETS = ["/manifest.webmanifest"];
 // この時間内に応答がなければ保存済みのページを返す
 const NAVIGATION_TIMEOUT_MS = 3000;

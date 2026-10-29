@@ -1,20 +1,21 @@
 "use client";
 
-import { FileText, Home, Settings, type LucideIcon } from "lucide-react";
+import { FileText, Home, Map as MapIcon, Settings, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-type NavKey = "home" | "sessions" | "settings";
+type NavKey = "home" | "sessions" | "map" | "settings";
 
 const navItems: { key: NavKey; href: string; icon: LucideIcon }[] = [
   { key: "home", href: "/", icon: Home },
   { key: "sessions", href: "/sessions", icon: FileText },
+  { key: "map", href: "/map", icon: MapIcon },
   { key: "settings", href: "/settings", icon: Settings },
 ];
 
-const HIDDEN_PATH_PREFIXES = ["/drive"];
+const HIDDEN_PATH_PREFIXES = ["/drive", "/map"];
 
 const PENDING_TIMEOUT_MS = 5000;
 

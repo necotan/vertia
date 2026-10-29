@@ -76,9 +76,10 @@ async function computeStoredSummary(
 
 // セッションと紐づく時系列データをまとめて削除する
 export async function deleteSession(sessionId: string): Promise<void> {
-  await db.transaction("rw", db.sessions, db.gpsPoints, db.motionChunks, async () => {
+  await db.transaction("rw", [db.sessions, db.gpsPoints, db.motionChunks, db.sessionCells], async () => {
     await db.gpsPoints.where("sessionId").equals(sessionId).delete();
     await db.motionChunks.where("sessionId").equals(sessionId).delete();
+    await db.sessionCells.delete(sessionId);
     await db.sessions.delete(sessionId);
   });
 }

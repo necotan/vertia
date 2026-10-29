@@ -10,6 +10,7 @@
     "label": "メインナビゲーション",
     "home": "ホーム",
     "sessions": "記録",
+    "map": "マップ",
     "settings": "設定"
   },
   "sessions": {
@@ -110,6 +111,15 @@
     },
     "recent": {
       "title": "最近の記録"
+    }
+  },
+  "map": {
+    "title": "マップ",
+    "offline": "オフラインのため地図を表示できません",
+    "styles": {
+      "open": "地図の種類を選択",
+      "title": "地図の種類",
+      "close": "閉じる"
     }
   },
   "settings": {

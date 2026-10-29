@@ -10,10 +10,11 @@ import type {
 } from "maplibre-gl";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import type { GpsPoint } from "@/lib/db/schema";
 import { GPS_ACCURACY_LIMIT_M } from "@/lib/drive/liveStats";
+import { fillMissingStyleImages, loadMapLibre, useMapPageBackground, useOnline } from "@/lib/mapLibre";
 import { MAP_STYLES, type MapStyleId, saveMapStyle, themeMapStyle, useSavedMapStyle } from "@/lib/mapStyles";
 import { saveRouteSpeedColors, useRouteSpeedColors, useSpeedPalette, useSpeedScale } from "@/lib/routeColorMode";
 import { buildSpeedGradient, SPEED_PALETTES, type SpeedGradient } from "@/lib/routeSpeed";
@@ -21,7 +22,6 @@ import { useDistanceUnit } from "@/lib/units";
 import { MapStylePicker } from "./MapStylePicker";
 import { RouteSpeedLegend } from "./RouteSpeedLegend";
 
-const WORKER_URL = "/maplibre/maplibre-gl-worker.mjs";
 const ATTRIBUTION_COLLAPSE_MS = 5000;
 const PLACEHOLDER_FADE_MS = 300;
 
@@ -137,21 +137,11 @@ function applyTiltGestures(map: MapLibreMap, pitch: number) {
 // loading: プレースホルダで地図を覆う, fading: プレースホルダをフェードアウト中, shown: 地図のみ
 type Phase = "loading" | "fading" | "shown";
 
-function subscribeOnline(onChange: () => void): () => void {
-  window.addEventListener("online", onChange);
-  window.addEventListener("offline", onChange);
-  return () => {
-    window.removeEventListener("online", onChange);
-    window.removeEventListener("offline", onChange);
-  };
-}
-
 export function SessionMap({ points }: { points: GpsPoint[] }) {
   const t = useTranslations("sessions.detail.map");
   const { resolvedTheme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
-  // 地図のタイルは保存しないため、オフラインのときは地図の代わりにメッセージを出す
-  const online = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
+  const online = useOnline();
   // 地図のスタイルとタイルの読み込みが終わるまでは、帰属表示ボタンごとプレースホルダで覆う
   const [phase, setPhase] = useState<Phase>("loading");
   const [fullscreen, setFullscreen] = useState(false);
@@ -222,12 +212,8 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
     let cancelled = false;
     let collapseTimer: ReturnType<typeof setTimeout> | undefined;
 
-    void import("maplibre-gl").then(({ Map, LngLatBounds, setWorkerUrl, prewarm }) => {
+    void loadMapLibre().then(({ Map, LngLatBounds }) => {
       if (cancelled) return;
-      // Worker の URL は相対パスだと Worker 側で解決できないため、絶対 URL にして渡す
-      setWorkerUrl(new URL(WORKER_URL, window.location.href).href);
-      // Worker を地図インスタンス間で使い回し、2回目以降の生成を最適化する
-      prewarm();
       const bounds = coordinates.reduce(
         (acc, coordinate) => acc.extend(coordinate),
         new LngLatBounds(coordinates[0], coordinates[0]),
@@ -255,10 +241,7 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
       boundsRef.current = bounds;
       appliedFullscreenRef.current = fullscreenAtCreate;
       appliedStyleRef.current = styleAtCreate;
-      // OpenFreeMap の dark スタイルは sprite にない模様（wood-pattern）を参照していて警告が出るため、見つからない画像は透明な 1px の画像で埋める
-      loadedMap.setMissingStyleImageResolver((id) => {
-        if (!loadedMap.hasImage(id)) loadedMap.addImage(id, { width: 1, height: 1, data: new Uint8Array(4) });
-      });
+      fillMissingStyleImages(loadedMap);
       loadedMap.on("load", () => {
         setPhase("fading");
         collapseTimer = setTimeout(() => {
@@ -344,21 +327,7 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
     }
   }, [isFullscreen, activeStyle, getRouteStyle]);
 
-  // Safari は画面上部のぼかしをページの背景色で色づけるため、全画面の間は地図の背景色に合わせる
-  const fullscreenBackground =
-    isFullscreen && activeStyle !== undefined ? MAP_STYLES[activeStyle].swatch.background : null;
-
-  useEffect(() => {
-    if (fullscreenBackground === null) return;
-    const targets = [document.documentElement, document.body];
-    const previous = targets.map((element) => element.style.backgroundColor);
-    for (const element of targets) element.style.backgroundColor = fullscreenBackground;
-    return () => {
-      targets.forEach((element, index) => {
-        element.style.backgroundColor = previous[index];
-      });
-    };
-  }, [fullscreenBackground]);
+  useMapPageBackground(isFullscreen && activeStyle !== undefined ? MAP_STYLES[activeStyle].swatch.background : null);
 
   const openFullscreen = () => {
     // 戻る操作やスワイプバックで全画面だけを閉じられるよう、同じ URL のエントリを積む

@@ -4,15 +4,16 @@ The storage formats of Vertia: the IndexedDB schema, the session file, stored we
 
 ## 1. IndexedDB Schema
 
-Database `vertia` (Dexie version 3, `lib/db/schema.ts`). Times are epoch milliseconds; physical values are SI units.
+Database `vertia` (Dexie version 4, `lib/db/schema.ts`). Times are epoch milliseconds; physical values are SI units.
 
 | Store | Primary key | Indexes |
 |---|---|---|
 | `sessions` | `id` | `startedAt`, `status` |
 | `gpsPoints` | `++id` | `sessionId`, `[sessionId+t]` |
 | `motionChunks` | `++id` | `sessionId`, `[sessionId+seq]` |
+| `sessionCells` | `sessionId` | |
 
-Dexie version history: 1 = initial stores; 2 = adds `weather` (existing sessions set to `null`); 3 = adds `calibration.forward` (existing sessions set to `null`).
+Dexie version history: 1 = initial stores; 2 = adds `weather` (existing sessions set to `null`); 3 = adds `calibration.forward` (existing sessions set to `null`); 4 = adds the `sessionCells` store (no upgrade; filled when the map screen opens).
 
 `DriveSession` (`sessions`):
 
@@ -45,10 +46,22 @@ Dexie version history: 1 = initial stores; 2 = adds `weather` (existing sessions
 
 A nullable column is `null` when every sample lacks the value; when only some samples lack it, those entries are `NaN`. All columns in a chunk have the same length.
 
+`SessionCells` (`sessionCells`): a cache of the H3 cells a session passed through, derived from its GPS points (`lib/exploredCells.ts`, `requirements.md` §7.6). Deleted together with its session.
+
+| Field | Type | Notes |
+|---|---|---|
+| `sessionId` | `string` | |
+| `resolution` | `number` | H3 resolution (currently 8) |
+| `algorithmVersion` | `number` | Version of the computation (currently 1). A row whose `resolution` or `algorithmVersion` differs from the app's is recomputed. |
+| `cells` | `string[]` | H3 cell IDs, without duplicates |
+
+Changing how cells are computed needs no Dexie version: raise `CELL_ALGORITHM_VERSION` (or the resolution) in `lib/exploredCells.ts` and the rows are recomputed.
+
 ## 2. Session File (Export/Import)
 
 - One session per file. Filename `vertia-YYYYMMDD-HHmm.json.gz` (local start time). Content: gzip-compressed JSON.
 - Requires `CompressionStream` / `DecompressionStream`.
+- `sessionCells` is not exported; it is recomputed from the GPS points after import.
 
 | Field | Content |
 |---|---|
