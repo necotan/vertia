@@ -10,14 +10,13 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Next.js-App%20Router-000000?logo=nextdotjs&logoColor=white">
+  <img src="https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white">
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black">
   <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white">
-  <img src="https://img.shields.io/badge/Tailwind%20CSS-v4-06B6D4?logo=tailwindcss&logoColor=white">
-  <img src="https://img.shields.io/badge/MapLibre-GL%20JS-396CB2?logo=maplibre&logoColor=white">
+  <img src="https://img.shields.io/badge/Tailwind%20CSS-4-06B6D4?logo=tailwindcss&logoColor=white">
+  <img src="https://img.shields.io/badge/MapLibre%20GL%20JS-6-396CB2?logo=maplibre&logoColor=white">
+  <img src="https://img.shields.io/badge/Dexie.js-4-000000">
   <br>
-  <img src="https://img.shields.io/badge/PWA-Ready-5A0FC8?logo=pwa&logoColor=white">
-  <img src="https://img.shields.io/badge/Platform-iOS%20%7C%20Android-555555?logo=apple&logoColor=white">
-  <img src="https://img.shields.io/badge/Data-Local%20Only-E05D44">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green"></a>
   <a href="https://vertia-app.vercel.app"><img src="https://img.shields.io/badge/Demo-Vercel-000000?logo=vercel&logoColor=white"></a>
 </p>
