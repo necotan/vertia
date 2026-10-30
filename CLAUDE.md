@@ -71,6 +71,44 @@ The specs are the source of truth for what to build; read the relevant section b
 - Use `useTranslations("<namespace>")` and ICU `{name}` placeholders.
 - Load and save the locale only through `lib/i18n/config.ts` and `lib/i18n/I18nProvider.tsx` (client-side, no locale routing).
 
+### Comments
+
+- Write only why: the reason for a choice, workarounds for browser or library quirks (iOS Safari, MapLibre, Dexie, etc.), and constraints the code alone does not show.
+- Do not write what the code, names, or JSX already say (e.g. "ハンバーガーメニュー", "保存ボタン", "〜の処理"). If there is no why to explain, write no comment.
+- No decorative characters such as `---`, `===`, `***`.
+
+## Commit messages
+
+| Prefix | Use |
+|---|---|
+| fix | Bug fix |
+| hotfix | Critical bug fix |
+| add | New file or feature |
+| update | Feature change (not a bug) |
+| change | Spec change |
+| clean | Cleanup, refactoring |
+| disable | Disable, comment out |
+| remove | Remove a file or feature |
+| upgrade | Version upgrade |
+| revert | Revert a change |
+
+- Line 1: `<prefix>: <summary in English>`.
+- The body is optional. For a small change that line 1 fully describes, write line 1 only. Otherwise add a blank line and 1 to about 4 Japanese bullets; do not pad to reach 4.
+- Bullets name the concrete files, components, or storage keys changed and how. Do not explain causes or background unless the user asks.
+
+```
+update: enlarge region name on explored map
+```
+
+```
+update: open explored map at last position or latest drive's prefecture
+
+- lib/exploredMapView.ts を追加し、地図の中心と縮尺を vertia.exploredMapView に保存、復元
+- 保存位置がない場合は最新セッションのセルとその県の陸地の範囲に合わせて表示する
+- lib/regions.ts に地点を含む陸地だけの範囲を返す regionPartBoundsAt を追加
+- requirements.md 7.6 と data-model.md §4 に初期表示と localStorage キーを追記
+```
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know
