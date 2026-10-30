@@ -561,7 +561,7 @@ export function ExploredMapScreen() {
           <Layers className="size-5" />
         </button>
         {region && (
-          <p className="absolute left-[calc(env(safe-area-inset-left)+72px)] right-[calc(env(safe-area-inset-right)+72px)] top-[calc(env(safe-area-inset-top)+40px)] truncate text-lg font-bold leading-10 text-foreground">
+          <p className="absolute left-[calc(env(safe-area-inset-left)+72px)] right-[calc(env(safe-area-inset-right)+72px)] top-[calc(env(safe-area-inset-top)+40px)] truncate text-2xl font-bold leading-10 text-foreground">
             {locale === "ja" ? region.name : region.nameEn}
           </p>
         )}
