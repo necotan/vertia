@@ -31,7 +31,6 @@ export function normalize(a: Vec3): Vec3 | null {
   return len < 1e-6 ? null : scale(a, 1 / len);
 }
 
-// ベクトルを up に垂直な平面へ射影して正規化する
 export function projectToHorizontal(v: Vec3, up: Vec3): Vec3 | null {
   return normalize(sub(v, scale(up, dot(v, up))));
 }

@@ -303,7 +303,6 @@ export function ExploredMapScreen() {
       created = new Map({
         container,
         style: style.url,
-        // 前回の位置があればそこで開き、なければ最新のセッション、セルもなければ日本全体
         ...(savedView
           ? { center: savedView.center, zoom: savedView.zoom }
           : boundsAtCreate
@@ -407,7 +406,6 @@ export function ExploredMapScreen() {
     }
   }, [map, shapes]);
 
-  // 動かし終えたときの中央の市区町村 (縮小時は都道府県) を出す
   useEffect(() => {
     if (!map) return;
     let request = 0;
@@ -494,7 +492,6 @@ export function ExploredMapScreen() {
     if (MAP_STYLES[previousStyle].pitch !== style.pitch) map.easeTo({ pitch: style.pitch, bearing: 0 });
   }, [map, activeStyle]);
 
-  // 上部のぼかしの色を読み込み画面に揃える
   useMapPageBackground(
     mapLayout && activeStyle !== undefined && phase !== "loading" ? MAP_STYLES[activeStyle].swatch.background : null,
   );

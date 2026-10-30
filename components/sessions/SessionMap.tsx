@@ -30,12 +30,10 @@ const ROUTE_COLORS = {
   dark: { line: "#fafafa", casing: "#0a0a0a" },
 } as const;
 
-// 全画面表示やスタイルの選択を開いたときに積む履歴のエントリのキー
 const FULLSCREEN_HISTORY_KEY = "vertiaSessionMapFullscreen";
 const STYLE_SHEET_HISTORY_KEY = "vertiaSessionMapStyleSheet";
 
 function getFitBoundsOptions(fullscreen: boolean, button: HTMLElement | null, pitch: number): FitBoundsOptions {
-  // 実際の位置から上の余白を決める
   const top = button ? button.offsetTop + button.offsetHeight + 16 : 96;
   return {
     padding: fullscreen ? { top, bottom: 64, left: 48, right: 48 } : { top: 72, bottom: 40, left: 40, right: 40 },
@@ -60,7 +58,6 @@ function routeVisibility(speedColors: boolean): { line: Visibility; speed: Visib
   return speedColors ? { line: "none", speed: "visible" } : { line: "visible", speed: "none" };
 }
 
-// ルートと始点・終点を描くためのソースとレイヤー
 function buildRouteStyle({ coordinates, speedGradient, speedColors }: RouteData, darkStyle: boolean): RouteStyle {
   const colors = ROUTE_COLORS[darkStyle ? "dark" : "light"];
   const visibility = routeVisibility(speedColors);
@@ -124,7 +121,6 @@ function buildRouteStyle({ coordinates, speedGradient, speedColors }: RouteData,
   };
 }
 
-// 立体表示のスタイルだけ、地図を傾けたり回したりできるようにする
 function applyTiltGestures(map: MapLibreMap, pitch: number) {
   if (pitch > 0) {
     map.dragRotate.enable();
@@ -191,7 +187,6 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
   // next-themes はマウント前に undefined を返すため、テーマが決まってから地図を描画する
   const theme = resolvedTheme === undefined ? undefined : resolvedTheme === "dark" ? "dark" : "light";
 
-  // 地図を出せない状態になったら全画面も解除する
   const isFullscreen = fullscreen && coordinates.length > 0 && online;
   // 選んだスタイルは全画面のときだけ使用し、小さい地図はテーマに合わせる
   const activeStyle: MapStyleId | undefined =
@@ -200,7 +195,6 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
   // テーマ切り替え等で地図を作り直すときに、全画面かどうかとスタイルを引き継ぐ
   const isFullscreenRef = useRef(isFullscreen);
   const activeStyleRef = useRef(activeStyle);
-  // 地図に反映済みの状態
   const appliedFullscreenRef = useRef(isFullscreen);
   const appliedStyleRef = useRef<MapStyleId | null>(null);
 

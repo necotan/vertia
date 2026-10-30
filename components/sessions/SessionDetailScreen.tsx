@@ -131,7 +131,6 @@ export function SessionDetailScreen() {
   const id = useSearchParams().get("id") ?? "";
   // 読み込み中は undefined、見つからないときは null
   const session = useLiveQuery<DriveSession | null>(async () => (await db.sessions.get(id)) ?? null, [id]);
-  // 地図と速度グラフで使用する GPS 点
   const points = useLiveQuery(() => getSessionGpsPoints(id), [id]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);

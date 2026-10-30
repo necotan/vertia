@@ -116,7 +116,6 @@ function median(sorted: number[]): number | null {
   return sorted.length % 2 === 1 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
-// 保存済みデータからサマリーを再計算する
 // 最大Gは記録中と同じく表示用ローパス後の値で求める
 export function computeSummaryFromData(
   startedAt: number,

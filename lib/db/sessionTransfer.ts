@@ -299,7 +299,6 @@ function parseMotionChunk(value: unknown, sessionId: string): MotionChunk | null
     return null;
   }
 
-  // すべての列が同じ件数であることを確かめる
   const length = dt.length;
   const columns = [ax, ay, az, lax, lay, laz, ra, rb, rg];
   if (columns.some((column) => column !== null && column.length !== length)) return null;

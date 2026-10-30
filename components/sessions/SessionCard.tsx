@@ -48,7 +48,6 @@ export function SessionCard({ session }: { session: DriveSession }) {
   );
 }
 
-// 読み込み中に SessionCard と同じ位置・高さで表示するプレースホルダ（外枠とグリッドは実カードと同じクラス、ラベルは実テキスト、日付と数値だけスケルトン）
 export function SessionCardSkeleton() {
   const t = useTranslations("sessions.card");
 
