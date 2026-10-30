@@ -54,6 +54,7 @@ const MAP_BUTTON_CLASS =
   "pointer-events-auto absolute top-[calc(env(safe-area-inset-top)+40px)] flex size-10 items-center justify-center rounded-full border border-border bg-background/90 text-foreground backdrop-blur-md transition-colors hover:bg-muted";
 
 type StyleSpecification = Parameters<TransformStyleFunction>[1];
+type LayerSpecification = StyleSpecification["layers"][number];
 type ExploredStyle = Pick<StyleSpecification, "sources" | "layers">;
 type ExploredShapes = { fine: MultiPolygonCoordinates; coarse: MultiPolygonCoordinates };
 type ExploredData = { sessions: DriveSession[]; cells: SessionCells[] };
@@ -100,6 +101,14 @@ function buildExploredStyle(
     paint: { "line-color": colors.line, "line-width": 3 },
   });
   return { sources, layers };
+}
+
+// スタイルによっては途中にも文字のレイヤーがあるため、最後の文字以外のレイヤーの直後を探す
+function labelLayersStart(layers: LayerSpecification[]): number {
+  for (let index = layers.length - 1; index >= 0; index -= 1) {
+    if (layers[index].type !== "symbol") return index + 1;
+  }
+  return 0;
 }
 
 function regionLevelAt(zoom: number): RegionLevel | null {
@@ -315,8 +324,10 @@ export function ExploredMapScreen() {
         // 読み込み前にスタイルを切り替えた場合は、切り替え時にセルを追加済み
         if (!loadedMap.getSource("explored-fine") && shapesRef.current) {
           const exploredStyle = buildExploredStyle(shapesRef.current, regionRef.current?.coordinates ?? [], style.dark);
+          const baseLayers = loadedMap.getStyle().layers;
+          const beforeId = baseLayers[labelLayersStart(baseLayers)]?.id;
           for (const [id, source] of Object.entries(exploredStyle.sources)) loadedMap.addSource(id, source);
-          for (const layer of exploredStyle.layers) loadedMap.addLayer(layer);
+          for (const layer of exploredStyle.layers) loadedMap.addLayer(layer, beforeId);
         }
         setMap(loadedMap);
       });
@@ -404,10 +415,11 @@ export function ExploredMapScreen() {
         transformStyle: (_previous, next) => {
           if (!shapesRef.current) return next;
           const exploredStyle = buildExploredStyle(shapesRef.current, regionRef.current?.coordinates ?? [], style.dark);
+          const labelsStart = labelLayersStart(next.layers);
           return {
             ...next,
             sources: { ...next.sources, ...exploredStyle.sources },
-            layers: [...next.layers, ...exploredStyle.layers],
+            layers: [...next.layers.slice(0, labelsStart), ...exploredStyle.layers, ...next.layers.slice(labelsStart)],
           };
         },
       });
