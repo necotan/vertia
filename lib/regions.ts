@@ -6,7 +6,7 @@ const BOUNDARIES_PATH = "/boundaries";
 
 export type RegionLevel = "municipality" | "prefecture";
 
-type Bounds = [number, number, number, number];
+export type Bounds = [number, number, number, number];
 type RegionEntry = {
   id: string;
   name: string;
@@ -52,10 +52,12 @@ function ringContains(ring: number[][], { lng, lat }: CellCenter): boolean {
   return inside;
 }
 
+function polygonContains([outer, ...holes]: number[][][], point: CellCenter): boolean {
+  return ringContains(outer, point) && !holes.some((hole) => ringContains(hole, point));
+}
+
 function multiPolygonContains(coordinates: MultiPolygonCoordinates, point: CellCenter): boolean {
-  return coordinates.some(
-    ([outer, ...holes]) => ringContains(outer, point) && !holes.some((hole) => ringContains(hole, point)),
-  );
+  return coordinates.some((polygon) => polygonContains(polygon, point));
 }
 
 export async function findRegionAt(level: RegionLevel, point: CellCenter): Promise<Region | null> {
@@ -69,6 +71,23 @@ export async function findRegionAt(level: RegionLevel, point: CellCenter): Promi
   const matchIndex = geometries.findIndex(({ coordinates }) => multiPolygonContains(coordinates, point));
   if (matchIndex === -1) return null;
   return { ...candidates[matchIndex], level, coordinates: geometries[matchIndex].coordinates };
+}
+
+// 東京都の小笠原諸島のような離れた島まで含めると広すぎるため、点を含む陸地だけの範囲を返す
+export function regionPartBoundsAt(region: Region, point: CellCenter): Bounds | null {
+  const part = region.coordinates.find((polygon) => polygonContains(polygon, point));
+  if (!part) return null;
+  let west = Infinity;
+  let south = Infinity;
+  let east = -Infinity;
+  let north = -Infinity;
+  for (const [lng, lat] of part[0]) {
+    west = Math.min(west, lng);
+    south = Math.min(south, lat);
+    east = Math.max(east, lng);
+    north = Math.max(north, lat);
+  }
+  return [west, south, east, north];
 }
 
 export function toCellCenters(cells: string[]): CellCenter[] {
