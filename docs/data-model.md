@@ -93,6 +93,7 @@ Import (`lib/db/sessionTransfer.ts`):
 | `vertia.locale` | `ja`, `en` |
 | `vertia.distanceUnit` | `km`, `mi` |
 | `vertia.mapStyle` | Map style ID (`requirements.md` §7.2) |
+| `vertia.exploredMapView` | JSON `{ "center": [lng, lat], "zoom": number }`: the map screen position, saved whenever the map stops moving (`requirements.md` §7.6) |
 | `vertia.routeSpeedColors` | `on`, `off` |
 | `vertia.speedPalette` | `blue`, `standard` |
 | `vertia.speedScale` | `relative`, `absolute` |

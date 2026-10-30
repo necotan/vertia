@@ -30,9 +30,18 @@ import {
   type MultiPolygonCoordinates,
   toCoarseCells,
 } from "@/lib/exploredCells";
+import { detectExploredMapView, type ExploredMapView, saveExploredMapView } from "@/lib/exploredMapView";
 import { fillMissingStyleImages, loadMapLibre, useMapPageBackground, useOnline } from "@/lib/mapLibre";
 import { MAP_STYLES, type MapStyleId, saveMapStyle, themeMapStyle, useSavedMapStyle } from "@/lib/mapStyles";
-import { countCellsInRegion, findRegionAt, type Region, type RegionLevel, toCellCenters } from "@/lib/regions";
+import {
+  type Bounds,
+  countCellsInRegion,
+  findRegionAt,
+  type Region,
+  type RegionLevel,
+  regionPartBoundsAt,
+  toCellCenters,
+} from "@/lib/regions";
 
 const ATTRIBUTION_COLLAPSE_MS = 5000;
 const LOADING_FADE_MS = 400;
@@ -58,7 +67,6 @@ type LayerSpecification = StyleSpecification["layers"][number];
 type ExploredStyle = Pick<StyleSpecification, "sources" | "layers">;
 type ExploredShapes = { fine: MultiPolygonCoordinates; coarse: MultiPolygonCoordinates };
 type ExploredData = { sessions: DriveSession[]; cells: SessionCells[] };
-type Bounds = [number, number, number, number];
 type RegionBadge = { element: HTMLDivElement; marker: Marker };
 
 const LEVELS = ["coarse", "fine"] as const;
@@ -109,6 +117,22 @@ function labelLayersStart(layers: LayerSpecification[]): number {
     if (layers[index].type !== "symbol") return index + 1;
   }
   return 0;
+}
+
+// 走った範囲だけに合わせると近づきすぎるため、その県が収まる範囲にする
+async function withPrefectureBounds(latest: Bounds, latestCells: string[]): Promise<Bounds> {
+  const [west, south, east, north] = latest;
+  // 範囲の中心が海の上のときは、走った地点で探す
+  const points = [{ lng: (west + east) / 2, lat: (south + north) / 2 }, ...toCellCenters(latestCells.slice(0, 1))];
+  for (const point of points) {
+    // 境界を読み込めなかったときは、走った範囲だけに合わせる
+    const prefecture = await findRegionAt("prefecture", point).catch(() => null);
+    const part = prefecture && regionPartBoundsAt(prefecture, point);
+    if (part) {
+      return [Math.min(west, part[0]), Math.min(south, part[1]), Math.max(east, part[2]), Math.max(north, part[3])];
+    }
+  }
+  return latest;
 }
 
 function regionLevelAt(zoom: number): RegionLevel | null {
@@ -169,7 +193,14 @@ export function ExploredMapScreen() {
     const pending = targets.filter((s) => !cached.has(s.id) && !failedIds.has(s.id)).map((s) => s.id);
     const cells = new Set<string>();
     for (const session of targets) for (const cell of cached.get(session.id) ?? []) cells.add(cell);
-    return { sessionCount: targets.length, pending, cells: [...cells] };
+    // 全セルに合わせると、各地を走っていると日本全体まで縮小されるため、最後に走った場所を見せる
+    let latest: DriveSession | null = null;
+    for (const session of targets) {
+      if ((cached.get(session.id)?.length ?? 0) === 0) continue;
+      if (!latest || session.startedAt > latest.startedAt) latest = session;
+    }
+    const latestCells = latest ? (cached.get(latest.id) ?? []) : [];
+    return { sessionCount: targets.length, pending, cells: [...cells], latestCells };
   }, [data, failedIds]);
 
   // 保存するとライブクエリが更新され、次のセッションに進む
@@ -192,7 +223,23 @@ export function ExploredMapScreen() {
       },
     [explored],
   );
-  const bounds = useMemo(() => (shapes ? coordinatesBounds(shapes.fine) : null), [shapes]);
+  const latestBounds = useMemo(
+    () => (explored ? coordinatesBounds(cellsToCoordinates(explored.latestCells)) : null),
+    [explored],
+  );
+  const [prefectureFit, setPrefectureFit] = useState<{ latest: Bounds; bounds: Bounds } | null>(null);
+  useEffect(() => {
+    if (computing || !explored || !latestBounds) return;
+    let cancelled = false;
+    void withPrefectureBounds(latestBounds, explored.latestCells).then((bounds) => {
+      if (!cancelled) setPrefectureFit({ latest: latestBounds, bounds });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [computing, explored, latestBounds]);
+  // 古いセルで求めた範囲は使わない
+  const bounds = prefectureFit?.latest === latestBounds ? prefectureFit.bounds : null;
   const exploredCenters = useMemo(() => toCellCenters(explored?.cells ?? []), [explored]);
   const regionPercent = useMemo(() => {
     if (!region || region.cellCount === 0) return null;
@@ -217,8 +264,9 @@ export function ExploredMapScreen() {
   const attributionRef = useRef(attribution);
   const appliedStyleRef = useRef<MapStyleId | null>(null);
   const fittedRef = useRef(false);
+  const savedViewRef = useRef<ExploredMapView | null>(null);
   const initialFitRef = useRef<{ bounds: Bounds | null; ready: boolean }>({ bounds: null, ready: false });
-  const fitReady = !computing && explored !== null;
+  const fitReady = !computing && explored !== null && (latestBounds === null || bounds !== null);
 
   useEffect(() => {
     shapesRef.current = shapes;
@@ -249,14 +297,18 @@ export function ExploredMapScreen() {
       const style = MAP_STYLES[styleAtCreate];
       const initialFit = initialFitRef.current;
       const boundsAtCreate = initialFit.ready ? initialFit.bounds : null;
+      const savedView = detectExploredMapView();
+      savedViewRef.current = savedView;
 
       created = new Map({
         container,
         style: style.url,
-        // セルがなければ日本全体
-        ...(boundsAtCreate
-          ? { bounds: boundsAtCreate, fitBoundsOptions: { padding: getFitPadding(), maxZoom: FIT_MAX_ZOOM } }
-          : { center: [138, 37], zoom: 4 }),
+        // 前回の位置があればそこで開き、なければ最新のセッション、セルもなければ日本全体
+        ...(savedView
+          ? { center: savedView.center, zoom: savedView.zoom }
+          : boundsAtCreate
+            ? { bounds: boundsAtCreate, fitBoundsOptions: { padding: getFitPadding(), maxZoom: FIT_MAX_ZOOM } }
+            : { center: [138, 37], zoom: 4 }),
         pitch: style.pitch,
         dragRotate: style.pitch > 0,
         touchPitch: style.pitch > 0,
@@ -381,6 +433,18 @@ export function ExploredMapScreen() {
   }, [map]);
 
   useEffect(() => {
+    if (!map) return;
+    const save = () => {
+      const { lng, lat } = map.getCenter();
+      saveExploredMapView({ center: [lng, lat], zoom: map.getZoom() });
+    };
+    map.on("moveend", save);
+    return () => {
+      map.off("moveend", save);
+    };
+  }, [map]);
+
+  useEffect(() => {
     map?.getSource<GeoJSONSource>(REGION_SOURCE)?.setData(toFeature(region?.coordinates ?? []));
   }, [map, region]);
 
@@ -393,14 +457,16 @@ export function ExploredMapScreen() {
 
   // 計算の途中で合わせると範囲が欠けるため、終わってから1回だけ移動し、以降は利用者が動かした位置を保つ
   useEffect(() => {
-    if (!map || computing || explored === null || fittedRef.current) return;
+    if (!map || !fitReady || fittedRef.current) return;
     fittedRef.current = true;
     // 読み込み画面の裏で移動する
-    if (bounds) map.fitBounds(bounds, { padding: getFitPadding(), maxZoom: FIT_MAX_ZOOM, animate: false });
+    if (bounds && !savedViewRef.current) {
+      map.fitBounds(bounds, { padding: getFitPadding(), maxZoom: FIT_MAX_ZOOM, animate: false });
+    }
     // idle は描画後にしか発火しないため、移動しない場合も描画させる
     map.once("idle", () => setPhase("fading"));
     map.triggerRepaint();
-  }, [map, computing, explored, bounds, getFitPadding]);
+  }, [map, fitReady, bounds, getFitPadding]);
 
   useEffect(() => {
     const previousStyle = appliedStyleRef.current;
