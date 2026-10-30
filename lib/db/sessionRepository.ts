@@ -43,7 +43,6 @@ export async function appendSessionData(
   });
 }
 
-// 記録開始時の天気を後から書き込む
 export async function setSessionWeather(sessionId: string, weather: SessionWeather): Promise<void> {
   await db.sessions.update(sessionId, { weather });
 }
@@ -74,7 +73,6 @@ async function computeStoredSummary(
   return computeSummaryFromData(startedAt, endedAt, calibration, points, chunks);
 }
 
-// セッションと紐づく時系列データをまとめて削除する
 export async function deleteSession(sessionId: string): Promise<void> {
   await db.transaction("rw", [db.sessions, db.gpsPoints, db.motionChunks, db.sessionCells], async () => {
     await db.gpsPoints.where("sessionId").equals(sessionId).delete();

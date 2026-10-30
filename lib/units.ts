@@ -3,7 +3,6 @@ import { useSyncExternalStore } from "react";
 export const distanceUnits = ["km", "mi"] as const;
 export type DistanceUnit = (typeof distanceUnits)[number];
 
-// 距離の単位に対応する速度の単位
 export const speedUnitOf = { km: "kmh", mi: "mph" } as const satisfies Record<DistanceUnit, string>;
 export const temperatureUnitOf = { km: "celsius", mi: "fahrenheit" } as const satisfies Record<DistanceUnit, string>;
 export const windSpeedUnitOf = { km: "mps", mi: "mph" } as const satisfies Record<DistanceUnit, string>;
@@ -39,12 +38,10 @@ export function metersToUnit(meters: number, unit: DistanceUnit): number {
   return meters / METERS_PER_UNIT[unit];
 }
 
-// m/s を km/h または mph に換算する
 export function mpsToUnit(mps: number, unit: DistanceUnit): number {
   return (mps * 3600) / METERS_PER_UNIT[unit];
 }
 
-// 摂氏を華氏に換算する
 export function celsiusToUnit(celsius: number, unit: DistanceUnit): number {
   return unit === "mi" ? celsius * 1.8 + 32 : celsius;
 }

@@ -94,7 +94,6 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  // RSC の取得は保存しない
   if (request.headers.has("RSC") || url.searchParams.has("_rsc")) return;
 
   if (request.mode === "navigate") {

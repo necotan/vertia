@@ -2,7 +2,6 @@ import type { SessionWeather } from "@/lib/db/schema";
 
 const ENDPOINT = "https://api.open-meteo.com/v1/forecast";
 const TIMEOUT_MS = 8000;
-// 送信する座標の小数点以下の桁数
 const COORD_DECIMALS = 2;
 
 export function roundCoord(value: number): number {

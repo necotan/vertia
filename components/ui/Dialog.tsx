@@ -38,7 +38,6 @@ export function DialogDescription({ className = "", ...props }: ComponentProps<t
   return <DialogPrimitive.Description className={`text-sm text-muted-foreground ${className}`} {...props} />;
 }
 
-// ボタンは子の数に応じて横幅を等分する
 export function DialogFooter({ className = "", ...props }: ComponentProps<"div">) {
   return <div className={`mt-6 grid auto-cols-fr grid-flow-col gap-2 ${className}`} {...props} />;
 }
