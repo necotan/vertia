@@ -1,6 +1,10 @@
 <h1 align="center">vertia</h1>
 
 <p align="center">
+  English | <a href="README.ja.md">日本語</a>
+</p>
+
+<p align="center">
   <img src="assets/vertia-icon-readme.png" width="120" alt="vertia">
 </p>
 
@@ -21,140 +25,140 @@
   <a href="https://vertia-app.vercel.app"><img src="https://img.shields.io/badge/Demo-Vercel-000000?logo=vercel&logoColor=white"></a>
 </p>
 
-## クイックスタート
-セットアップ不要で、ブラウザからすぐに試せます。走行画面は、GPS とモーションセンサーを備えた端末（主にスマートフォン）で開いてください。
+## Quick Start
+Try it right away in your browser, no setup needed. Open the drive screen on a device with GPS and motion sensors (usually a smartphone).
 
 **[vertia-app.vercel.app](https://vertia-app.vercel.app)**
 
-## 機能
-走行画面には、速度表示と円形の G メーターを中心に、平均・中央値・最高速度と GPS の誤差を並べています。走行中に画面が消えないよう、Screen Wake Lock でスリープを止めます。
+## Features
+The drive screen centers on a speed readout and a circular G meter, alongside average, median, and top speed and the GPS accuracy. Screen Wake Lock keeps the screen from sleeping while you drive.
 
-記録は手動で開始・終了します。GPS は端末が返すおおむね 1Hz、加速度と角速度は 50〜60Hz のまま間引かずに保存します。記録中にアプリが終了しても、次に開いたときに保存済みのデータから集計し直して復旧します。
+You start and stop recording manually. GPS is saved at the rate the device reports (about 1Hz), and acceleration and angular velocity at 50–60Hz without downsampling. If the app is closed during a recording, it recovers the next time you open it by recomputing the stats from the saved data.
 
-走り終えたら、記録ごとに走行ルートの地図と速度の推移グラフを描画します。距離・時間・速度・G の集計も同じ画面に出ます。記録 1 件を gzip 圧縮した JSON（`vertia-YYYYMMDD-HHmm.json.gz`）にエクスポートすることで、別の端末にインポートできます。
+After a drive, each recording shows a map of the route and a chart of speed over time. Distance, duration, speed, and G stats appear on the same screen. You can export a recording as gzip-compressed JSON (`vertia-YYYYMMDD-HHmm.json.gz`) and import it on another device.
 
-マップ画面では、これまでに記録したすべての走行で通った場所を、六角形のエリア（H3）で地図に塗って表示します。
+The map screen paints every place you have driven through across all recordings as hexagonal areas (H3).
 
-データはすべて端末の IndexedDB に保存し、サーバーには送りません。表示は日本語と English、テーマはライト / ダーク / システムから選べます。
+All data is stored in the device's IndexedDB and never sent to a server. The UI is available in Japanese and English, and the theme can be light, dark, or system.
 
-## 対応端末
+## Supported Devices
 
-| 端末 | 対応 |
+| Device | Support |
 | --- | --- |
-| iOS Safari | 優先対応 |
-| Android Chrome | 対応 |
-| PC | 記録の閲覧は可能 |
+| iOS Safari | Primary |
+| Android Chrome | Supported |
+| PC | Viewing recordings |
 
-走行画面を使用できるかは、画面幅ではなくセンサー API の有無で判定します。GPS とモーションセンサーを備えた PC なら走行画面も開けますが、多くの PC はこれらのセンサーを持たないため、インポートした記録の閲覧用となります。
+Whether the drive screen is available depends on the sensor APIs, not on screen width. A PC with GPS and motion sensors can open the drive screen too, but most PCs lack these sensors, so they are for viewing imported recordings.
 
-## 使い方
+## Usage
 
-### ホーム画面に追加
-スマートフォンではホーム画面に追加すると、アドレスバーなどのブラウザUIが消え、ネイティブアプリのように使用できます。
+### Add to Home Screen
+On a smartphone, adding the app to your home screen hides the address bar and other browser UI, so you can use it like a native app.
 
-- **iOS（Safari）**: 共有ボタンから「ホーム画面に追加」
-- **Android（Chrome）**: メニューから「ホーム画面に追加」
+- **iOS (Safari)**: Tap the Share button, then "Add to Home Screen"
+- **Android (Chrome)**: Open the menu, then "Add to Home screen"
 
-### 位置情報の設定
-走行画面では位置情報を使用します。速度や GPS 誤差が正しく表示されない場合は、次の設定を確認してください。
+### Location Settings
+The drive screen uses your location. If speed or GPS accuracy doesn't display correctly, check the following settings.
 
-- **iOS**: 「設定」から「プライバシーとセキュリティ」から「位置情報サービス」から「Safari Webサイト」で、「正確な位置情報」をオンにする
-- **Android**: Chrome の位置情報の権限で、「正確な位置情報を使用」をオンにする
+- **iOS**: In Settings → Privacy & Security → Location Services → Safari Websites, turn on "Precise Location"
+- **Android**: In Chrome's location permission, turn on "Use precise location"
 
-## 開発
-サーバーやデータベースは不要で、Next.js の開発サーバーで動作します。
+## Development
+No server or database is needed. It runs on the Next.js development server.
 
-### 前提条件
-- Node.js 24.22.1 以上（24.x）
-- 実機で走行画面を試す場合は、HTTPS で配信できる環境（Vercel の Preview など）
+### Prerequisites
+- Node.js 24.22.1 or later (24.x)
+- To try the drive screen on a real device, an environment that can serve over HTTPS (such as a Vercel Preview)
 
-### 手順
+### Steps
 
-1. リポジトリのクローン
+1. Clone the repository
    ```bash
    git clone https://github.com/necotan/vertia.git
    cd vertia
    ```
-2. 依存関係のインストール
+2. Install dependencies
    ```bash
    npm install
    ```
-3. 開発サーバーの起動
+3. Start the development server
    ```bash
    npm run dev
    ```
-   起動前に MapLibre の Worker を `public/maplibre/` へ自動でコピーします。
-4. ブラウザで `http://localhost:3000` にアクセスします。
+   Before starting, the MapLibre Worker is copied to `public/maplibre/` automatically.
+4. Open `http://localhost:3000` in your browser.
 
-### 注意点
-- 位置情報とモーションセンサーは HTTPS か localhost でしか動きません。スマートフォンの実機では、HTTPS の URL で開いてください。
-- iOS はタップ操作の中でしかモーションセンサーの許可ダイアログを出せません。そのため「測定を開始」ボタンを押したときに許可を求めます。
-- Service Worker の登録は本番ビルド（`npm run build` から `npm run start`）のときだけ行います。
+### Notes
+- Location and motion sensors only work over HTTPS or on localhost. On a real smartphone, open the app with an HTTPS URL.
+- iOS can only show the motion sensor permission dialog during a tap. That's why permission is requested when you press the "Start measuring" button.
+- The Service Worker is only registered in production builds (`npm run build` then `npm run start`).
 
-### npm スクリプト
+### npm Scripts
 
-| コマンド | 内容 |
+| Command | Action |
 | --- | --- |
-| `npm run dev` | 開発サーバーを起動（先に `copy:maplibre-worker` が走る） |
-| `npm run build` | 本番ビルド（先に `copy:maplibre-worker` が走る） |
-| `npm run start` | ビルド結果を起動 |
-| `npm run lint` | ESLint を実行 |
-| `npm run copy:maplibre-worker` | MapLibre の Worker を `public/maplibre/` にコピーする |
-| `npm run generate:icons` | `assets/vertia-icon.png` からファビコン・Apple 用・PWA 用のアイコンを生成する |
-| `npm run generate:boundaries -- <.shp> <.csv>` | 国土数値情報の行政区域データから、マップ画面の市区町村・都道府県の境界を `public/boundaries/` に生成する |
+| `npm run dev` | Start the development server (runs `copy:maplibre-worker` first) |
+| `npm run build` | Production build (runs `copy:maplibre-worker` first) |
+| `npm run start` | Start the built app |
+| `npm run lint` | Run ESLint |
+| `npm run copy:maplibre-worker` | Copy the MapLibre Worker to `public/maplibre/` |
+| `npm run generate:icons` | Generate favicons, Apple icons, and PWA icons from `assets/vertia-icon.png` |
+| `npm run generate:boundaries -- <.shp> <.csv>` | Generate the municipality and prefecture boundaries for the map screen in `public/boundaries/` from the National Land Numerical Information administrative area data |
 
-### ディレクトリ構成
+### Directory Structure
 
 ```
-app/                  ページ（App Router）、manifest、アイコン
+app/                  Pages (App Router), manifest, icons
 components/
-  drive/              走行画面
-  home/               ホーム
-  sessions/           記録一覧・詳細・地図・速度グラフ
-  map/                マップ
-  settings/           設定
-  layout/             下部ナビ、Provider
-  pwa/                Service Worker の登録
-  ui/                 ボタン、確認ダイアログ
+  drive/              Drive screen
+  home/               Home
+  sessions/           Recording list, details, map, speed chart
+  map/                Map
+  settings/           Settings
+  layout/             Bottom nav, providers
+  pwa/                Service Worker registration
+  ui/                 Buttons, confirmation dialog
 lib/
-  db/                 IndexedDB のスキーマ、記録の保存・削除、エクスポート / インポート
-  drive/              走行画面の制御、記録、集計、G の計算
-  drive/renderer/     Canvas の描画
-  sensors/            位置情報、モーションセンサー、Wake Lock
-  i18n/               言語設定
-  exploredCells.ts    走行ルートから通った H3 セルを計算
-  regions.ts          地図の中央の市区町村・都道府県の検索と探索率の計算
-  mapLibre.ts         MapLibre の読み込みと地図の共通処理
-  fonts.ts            フォントの定義
-  format.ts           経過時間の表示フォーマット
-  geo.ts              2 点間の距離計算、m/s から km/h 変換
-messages/             翻訳（ja.json / en.json）
-scripts/              アイコン・境界データの生成、MapLibre の Worker のコピー
-public/               Service Worker、PWA 用アイコン、市区町村・都道府県の境界（boundaries/）
+  db/                 IndexedDB schema, saving and deleting recordings, export / import
+  drive/              Drive screen control, recording, stats, G calculation
+  drive/renderer/     Canvas rendering
+  sensors/            Location, motion sensors, Wake Lock
+  i18n/               Language settings
+  exploredCells.ts    Computes the H3 cells passed through from a route
+  regions.ts          Finds the municipality and prefecture at the map center and computes exploration rates
+  mapLibre.ts         Loading MapLibre and shared map logic
+  fonts.ts            Font definitions
+  format.ts           Elapsed time formatting
+  geo.ts              Distance between two points, m/s to km/h conversion
+messages/             Translations (ja.json / en.json)
+scripts/              Icon and boundary data generation, MapLibre Worker copy
+public/               Service Worker, PWA icons, municipality and prefecture boundaries (boundaries/)
 ```
 
-### MapLibre の Worker について
-Turbopack は MapLibre GL JS v6 の Worker の URL を解決できません。そこで Worker と共有チャンクを `public/maplibre/` にコピーして配信し、`setWorkerUrl` でその URL を渡しています。`public/maplibre/` は `.gitignore` に入っています。
+### About the MapLibre Worker
+Turbopack can't resolve the Worker URL of MapLibre GL JS v6. So the Worker and its shared chunk are copied to `public/maplibre/` and served from there, and that URL is passed to `setWorkerUrl`. `public/maplibre/` is in `.gitignore`.
 
-### アイコンの更新
-`assets/vertia-icon.png` を差し替えて `npm run generate:icons` を実行すると、次のファイルを白背景付きで生成し直します。
+### Updating the Icons
+Replace `assets/vertia-icon.png` and run `npm run generate:icons` to regenerate the following files with a white background.
 
-- `app/favicon.ico`、`app/icon.png`、`app/apple-icon.png`
-- `public/icons/icon-192.png`、`icon-512.png`、`icon-maskable-512.png`
+- `app/favicon.ico`, `app/icon.png`, `app/apple-icon.png`
+- `public/icons/icon-192.png`, `icon-512.png`, `icon-maskable-512.png`
 
-### 境界データの更新
-マップ画面の市区町村・都道府県の境界は、[国土数値情報 行政区域データ](https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-2025.html)（N03）から生成しています。英語名は日本郵便の[郵便番号データ（ローマ字）](https://www.post.japanpost.jp/service/search/zipcode/download/roman-zip.html)から付けています。市町村合併などで更新するときは、N03 の全国データ（zip、約 600MB）と `KEN_ALL_ROME.zip` をダウンロードして展開し、`.shp` と `.CSV` のパスを渡して実行します。
+### Updating the Boundary Data
+The municipality and prefecture boundaries on the map screen are generated from the [National Land Numerical Information administrative area data](https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-2025.html) (N03). English names come from Japan Post's [postal code data (romanized)](https://www.post.japanpost.jp/service/search/zipcode/download/roman-zip.html). To update after municipal mergers and similar changes, download and extract the nationwide N03 data (zip, about 600MB) and `KEN_ALL_ROME.zip`, then run the script with the paths to the `.shp` and `.CSV` files.
 
 ```bash
 npm run generate:boundaries -- path/to/N03-20250101.shp path/to/KEN_ALL_ROME.CSV
 ```
 
-英語名が見つからない市区町村があると、一覧を出して止まります。`scripts/generateBoundaries.mjs` の `ENGLISH_NAME_OVERRIDES` に足してください。
+If any municipality has no English name, the script lists them and stops. Add them to `ENGLISH_NAME_OVERRIDES` in `scripts/generateBoundaries.mjs`.
 
-市区町村ごと・都道府県ごとの境界（`public/boundaries/municipality/`、`prefecture/`）と、名前・範囲・セル数の一覧（`index.json`）を生成し直します。`lib/exploredCells.ts` の `CELL_RESOLUTION` を変えたときも生成し直してください。
+This regenerates the per-municipality and per-prefecture boundaries (`public/boundaries/municipality/`, `prefecture/`) and the list of names, extents, and cell counts (`index.json`). Regenerate them also when you change `CELL_RESOLUTION` in `lib/exploredCells.ts`.
 
-## 技術スタック・クレジット (Tech Stack & Credits)
-このプロジェクトは以下の技術およびオープンソースライブラリを使用しています。
+## Tech Stack & Credits
+This project uses the following technologies and open-source libraries.
 
 - **Framework**: [Next.js](https://nextjs.org/) (App Router) / [React](https://react.dev/) / [TypeScript](https://www.typescriptlang.org/)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/) (v4) 
@@ -167,32 +171,32 @@ npm run generate:boundaries -- path/to/N03-20250101.shp path/to/KEN_ALL_ROME.CSV
 - **Icons**: [Lucide React](https://lucide.dev/) (Licensed under ISC)
 - **Hosting**: [Vercel](https://vercel.com/)
 
-地図データは © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors、タイルは OpenFreeMap / [OpenMapTiles](https://openmaptiles.org/) を利用しています。地図上にも出典を表示しています。
+Map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, tiles by OpenFreeMap / [OpenMapTiles](https://openmaptiles.org/). Attribution is also shown on the map.
 
-市区町村・都道府県の境界は「[国土数値情報（行政区域データ）](https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-2025.html)」（国土交通省、CC BY 4.0）を加工して作成しています。簡略化には [mapshaper](https://github.com/mbloch/mapshaper) を使っています。英語名は日本郵便の郵便番号データ（ローマ字）をもとにしています。
+The municipality and prefecture boundaries are created by processing the "[National Land Numerical Information (Administrative Area Data)](https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-2025.html)" (Ministry of Land, Infrastructure, Transport and Tourism, CC BY 4.0). They are simplified with [mapshaper](https://github.com/mbloch/mapshaper). English names are based on Japan Post's postal code data (romanized).
 
-## 免責事項 (Disclaimer)
+## Disclaimer
 
-**1. 走行中の利用について**
-運転者は走行中に画面を注視したり操作したりしないでください。記録の開始・終了は停車中に行い、スマートフォンは視界や運転操作を妨げない位置に固定してください。本アプリケーションの利用中に起きた事故・違反について、開発者は一切の責任を負いません。
+**1. Use While Driving**
+Drivers must not watch or operate the screen while driving. Start and stop recordings while stopped, and mount the smartphone where it doesn't block your view or interfere with driving. The developer accepts no liability for any accident or traffic violation that occurs while using this app.
 
-**2. 計測値の精度**
-速度・G・距離などの表示値は、スマートフォンの GPS とセンサーから算出した参考値です。端末の性能、電波状況、固定方法によって誤差が出ます。車両のスピードメーターや計測機器の代わりには使わないでください。
+**2. Accuracy of Measurements**
+Displayed values such as speed, G-force, and distance are estimates calculated from the smartphone's GPS and sensors. They contain errors that depend on device performance, signal conditions, and how the device is mounted. Do not use them in place of the vehicle's speedometer or measuring instruments.
 
-**3. データの取り扱いとプライバシー**
-走行ログ（位置情報を含む）は端末内の IndexedDB にのみ保存し、開発者のサーバーへは送信しません。ただし地図を表示するとき、ブラウザは表示範囲の地図タイルを OpenFreeMap から取得します。エクスポートしたファイルには走行ルートの位置情報が含まれるため、共有する際はご注意ください。
+**3. Data Handling and Privacy**
+Drive logs (including location data) are stored only in the device's IndexedDB and are not sent to the developer's servers. However, when displaying a map, the browser fetches map tiles for the visible area from OpenFreeMap. Exported files contain the location data of your routes, so be careful when sharing them.
 
-**4. データの損失について**
-本ソフトウェアは個人開発による成果物です。ブラウザのサイトデータの削除、端末の変更、予期せぬ不具合などにより、記録が消える可能性があります。残したい記録はエクスポート機能でバックアップを取ってください。
+**4. Data Loss**
+This software is a personal project. Recordings may be lost if browser site data is cleared, if you change devices, or due to unexpected bugs. Back up recordings you want to keep with the export feature.
 
-**5. 動作の保証範囲**
-iOS Safari を優先対応し、Android Chrome を対応としていますが、すべてのデバイスや OS 環境での動作を保証するものではありません。
+**5. Supported Environments**
+iOS Safari is the primary target and Android Chrome is supported, but the app is not guaranteed to work on every device or OS.
 
-**6. 免責と責任の制限**
-本ソフトウェアは「現状有姿（As-Is）」で提供されます。本アプリケーションの導入、利用、またはデータの消失等により生じた損害（金銭的損失、精神的苦痛などを含む）について、開発者は一切の責任を負いません。ご自身の責任においてご利用ください。
+**6. Disclaimer and Limitation of Liability**
+This software is provided "as is". The developer accepts no liability for any damages (including financial loss or emotional distress) arising from installing or using this app, or from loss of data. Use it at your own risk.
 
-**7. 外部環境の変化**
-使用している技術スタック（Next.js, MapLibre GL JS, OpenFreeMap 等）のアップデートや仕様変更、ブラウザのセンサー API の変更により、予告なく一部機能が使えなくなる可能性があります。開発者はこれらに対する恒久的なメンテナンスやアップデートの義務を負いません。
+**7. Changes in External Services**
+Updates or specification changes in the technologies used (Next.js, MapLibre GL JS, OpenFreeMap, etc.) or changes to browser sensor APIs may make some features unavailable without notice. The developer has no obligation to provide ongoing maintenance or updates for such changes.
 
-## ライセンス
-本プロジェクトのソースコードは [MIT License](LICENSE) の下で公開されています。商用・非商用を問わず、ライセンス条項の範囲内で自由にご利用いただけます。
+## License
+The source code of this project is released under the [MIT License](LICENSE). You may use it freely, commercially or non-commercially, within the terms of the license.
