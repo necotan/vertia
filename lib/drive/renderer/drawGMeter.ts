@@ -77,12 +77,11 @@ function drawAxisValues(ctx: CanvasRenderingContext2D, circle: Circle, g: GForce
   ];
 
   ctx.font = `600 ${size}px ${NUMBER_FONT}`;
+  ctx.fillStyle = g ? COLORS.text : COLORS.placeholder;
   for (const { value, x, y, align, baseline } of values) {
-    const text = Math.max(0, value).toFixed(2);
-    ctx.fillStyle = !g ? COLORS.placeholder : text === "0.00" ? COLORS.subText : COLORS.text;
     ctx.textAlign = align;
     ctx.textBaseline = baseline;
-    ctx.fillText(text, x, y);
+    ctx.fillText(Math.max(0, value).toFixed(2), x, y);
   }
 }
 
