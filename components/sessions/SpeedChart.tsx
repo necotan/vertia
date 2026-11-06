@@ -27,7 +27,7 @@ export function SpeedChart({ points, startedAt }: { points: GpsPoint[]; startedA
   return (
     <section className="flex flex-col gap-3">
       <h2 className="text-sm font-semibold text-muted-foreground">{t("title")}</h2>
-      <div className="h-56 w-full rounded-2xl border border-border bg-card p-2">
+      <div className="h-56 w-full rounded-2xl bg-card p-2">
         {data.length === 0 ? (
           <p className="flex h-full items-center justify-center px-4 text-center text-sm text-muted-foreground">
             {t("empty")}

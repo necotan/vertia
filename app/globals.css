@@ -6,42 +6,45 @@
 
 :root,
 .light {
+  --page: #f2f2f2;
   --background: #ffffff;
   --foreground: #0a0a0a;
   --card: #ffffff;
-  --border: #e5e5e5;
-  --muted: #f5f5f5;
-  --muted-foreground: #737373;
+  --border: #d4d4d4;
+  --muted: #e4e4e4;
+  --muted-foreground: #666666;
   --primary: #171717;
   --primary-foreground: #fafafa;
-  --secondary: #f5f5f5;
+  --secondary: #e4e4e4;
   --secondary-foreground: #171717;
   --destructive: oklch(0.577 0.21 27.325);
   --destructive-hover: oklch(0.505 0.18 27.518);
-  --skeleton: #f0f0f0;
+  --skeleton: #e5e5e5;
   --skeleton-shimmer: rgb(255 255 255 / 0.65);
   --map-attrib-icon: url("data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20fill-rule%3D%22evenodd%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20d%3D%22M4%2010a6%206%200%201%200%2012%200%206%206%200%201%200-12%200m5-3a1%201%200%201%200%202%200%201%201%200%201%200-2%200m0%203a1%201%200%201%201%202%200v3a1%201%200%201%201-2%200%22%2F%3E%3C%2Fsvg%3E");
   --map-attrib-active: rgb(0 0 0 / 0.05);
 }
 
 .dark {
-  --background: #0a0a0a;
+  --page: #000000;
+  --background: #000000;
   --foreground: #fafafa;
-  --card: #171717;
-  --border: rgb(255 255 255 / 0.1);
-  --muted: #262626;
+  --card: #191919;
+  --border: #3d3d3d;
+  --muted: #2b2b2b;
   --muted-foreground: #a3a3a3;
   --primary: #e5e5e5;
   --primary-foreground: #171717;
-  --secondary: #262626;
+  --secondary: #2b2b2b;
   --secondary-foreground: #fafafa;
-  --skeleton: #262626;
+  --skeleton: #2b2b2b;
   --skeleton-shimmer: rgb(255 255 255 / 0.08);
   --map-attrib-icon: url("data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20fill%3D%22%23fff%22%20fill-rule%3D%22evenodd%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20d%3D%22M4%2010a6%206%200%201%200%2012%200%206%206%200%201%200-12%200m5-3a1%201%200%201%200%202%200%201%201%200%201%200-2%200m0%203a1%201%200%201%201%202%200v3a1%201%200%201%201-2%200%22%2F%3E%3C%2Fsvg%3E");
   --map-attrib-active: rgb(255 255 255 / 0.08);
 }
 
 @theme inline {
+  --color-page: var(--page);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -71,7 +74,7 @@
 }
 
 body {
-  background: var(--background);
+  background: var(--page);
   color: var(--foreground);
 }
 
@@ -104,8 +107,9 @@ body {
   }
 }
 
-.dark:has(.drive-screen) body {
-  background: #000000;
+/* 走行画面は Canvas と同じ背景にする。--page ごと差し替えるとダイアログの暗転も同じ色を基準にできる */
+:root:has(.drive-screen) {
+  --page: var(--background);
 }
 
 .maplibregl-ctrl.maplibregl-ctrl-attrib.maplibregl-compact {

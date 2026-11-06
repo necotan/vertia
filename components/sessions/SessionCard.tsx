@@ -19,7 +19,7 @@ export function SessionCard({ session }: { session: DriveSession }) {
   return (
     <Link
       href={sessionDetailHref(session.id)}
-      className="block rounded-2xl border border-border bg-card p-4 transition-colors hover:bg-muted"
+      className="block rounded-2xl bg-card p-4 transition-colors hover:bg-muted"
     >
       <span className="text-sm font-medium">
         {format.dateTime(session.startedAt, { dateStyle: "medium", timeStyle: "short" })}
@@ -52,7 +52,7 @@ export function SessionCardSkeleton() {
   const t = useTranslations("sessions.card");
 
   return (
-    <div className="block rounded-2xl border border-border bg-card p-4">
+    <div className="block rounded-2xl bg-card p-4">
       {/* 実カードの日付行は親フォントの 1lh で高さが決まり、skeleton は overflow hidden でベースライン揃えが効かないため、1lh の枠の中央に置く */}
       <div className="flex min-h-[1lh] items-center">
         <SkeletonText size="sm" className="w-36" />
