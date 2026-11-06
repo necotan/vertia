@@ -136,7 +136,7 @@ The bottom navigation (`nav.home`, `nav.sessions`, `nav.map`, `nav.settings`) is
 - Screen Wake Lock is requested when measuring starts and re-requested when the page becomes visible again. If it fails or is unsupported, `drive.wakeLock.failed` or `drive.wakeLock.unsupported` is shown, and measuring continues.
 - The drive screen also **follows the app theme setting (light/dark/system)**.
   - In dark mode, pure black `#000000` is used as the background for OLED displays to optimize power consumption and visibility.
-  - In light mode, the same colors as the rest of the app are used.
+  - In light mode, pure white `#ffffff` is used as the background instead of the light gray page background of the other screens.
 - Rendering: the Canvas is redrawn on every animation frame. High-frequency values are held outside React; React is notified only of coarse state changes (phase, error, wake lock status).
 
 ### 7.2 Session Detail Screen

@@ -9,7 +9,7 @@ import { CHART_COLORS } from "@/lib/chartColors";
 import type { HomeStats as HomeStatsData, MonthlyDistance } from "@/lib/homeStats";
 import { metersToUnit, useDistanceUnit } from "@/lib/units";
 
-const TILE_CLASS = "flex min-w-0 flex-col rounded-2xl border border-border bg-card p-4";
+const TILE_CLASS = "flex min-w-0 flex-col rounded-2xl bg-card p-4";
 const UNIT_CLASS = "ml-1 text-xs font-normal text-muted-foreground";
 
 type StatItem = { label: string; value: ReactNode | null };

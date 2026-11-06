@@ -9,8 +9,8 @@ export function useDimmedPageBackground(active: boolean, brightness: number): vo
     const { style } = document.body;
     const previousColor = style.backgroundColor;
     const previousImage = style.backgroundImage;
-    style.backgroundColor = `color-mix(in srgb, var(--background) ${brightness}%, black)`;
-    style.backgroundImage = "linear-gradient(var(--background), var(--background))";
+    style.backgroundColor = `color-mix(in srgb, var(--page) ${brightness}%, black)`;
+    style.backgroundImage = "linear-gradient(var(--page), var(--page))";
     return () => {
       style.backgroundColor = previousColor;
       style.backgroundImage = previousImage;

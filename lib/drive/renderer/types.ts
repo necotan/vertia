@@ -53,11 +53,11 @@ export interface DrivePalette {
 const DARK_PALETTE: DrivePalette = {
   background: "#000000",
   text: "#ffffff",
-  subText: "#8a8a8a",
-  placeholder: "#2a2a2a",
-  ring: "#555555",
+  subText: "#a3a3a3",
+  placeholder: "#4a4a4a",
+  ring: "#666666",
   ringOuter: "#c4c4c4",
-  axis: "#262626",
+  axis: "#3d3d3d",
   dot: "#ffffff",
   recording: "#ef4444",
 };
@@ -65,11 +65,11 @@ const DARK_PALETTE: DrivePalette = {
 const LIGHT_PALETTE: DrivePalette = {
   background: "#ffffff",
   text: "#0a0a0a",
-  subText: "#737373",
-  placeholder: "#e5e5e5",
-  ring: "#bdbdbd",
+  subText: "#666666",
+  placeholder: "#bdbdbd",
+  ring: "#949494",
   ringOuter: "#4a4a4a",
-  axis: "#e5e5e5",
+  axis: "#d4d4d4",
   dot: "#0a0a0a",
   recording: "#dc2626",
 };
