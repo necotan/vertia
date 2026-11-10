@@ -60,6 +60,10 @@
         "gestureMac": "Use ⌘ + scroll to zoom the map",
         "enterFullscreen": "View map fullscreen",
         "exitFullscreen": "Exit fullscreen",
+        "endpoints": {
+          "start": "Start",
+          "end": "Finish"
+        },
         "speedColors": {
           "toggle": "Color by speed",
           "legend": "Speed colors"

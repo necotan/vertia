@@ -60,6 +60,10 @@
         "gestureMac": "⌘ + スクロールで地図を拡大・縮小できます",
         "enterFullscreen": "地図を全画面で表示",
         "exitFullscreen": "全画面表示を閉じる",
+        "endpoints": {
+          "start": "出発",
+          "end": "到着"
+        },
         "speedColors": {
           "toggle": "速度で色分け",
           "legend": "速度ごとの色"

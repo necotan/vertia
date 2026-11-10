@@ -30,6 +30,16 @@ const ROUTE_COLORS = {
   dark: { line: "#fafafa", casing: "#0a0a0a" },
 } as const;
 
+// 点の半径と枠線の幅（endpoints レイヤー）に、ラベルとの隙間を足した距離
+const ENDPOINT_LABEL_OFFSET_PX = 14;
+// 白抜きの開始点と塗りつぶしの終了点に合わせ、ラベルも枠線だけと塗りつぶしにする
+const ENDPOINT_LABEL_BASE_CLASS =
+  "pointer-events-none whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-semibold leading-4 backdrop-blur-md";
+const ENDPOINT_LABEL_CLASS = {
+  start: `${ENDPOINT_LABEL_BASE_CLASS} border-foreground bg-background/90 text-foreground`,
+  end: `${ENDPOINT_LABEL_BASE_CLASS} border-foreground bg-foreground/90 text-background`,
+} as const;
+
 const FULLSCREEN_HISTORY_KEY = "vertiaSessionMapFullscreen";
 const STYLE_SHEET_HISTORY_KEY = "vertiaSessionMapStyleSheet";
 
@@ -183,6 +193,7 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
     }),
     [t],
   );
+  const endpointLabelText = useMemo(() => ({ start: t("endpoints.start"), end: t("endpoints.end") }), [t]);
 
   // next-themes はマウント前に undefined を返すため、テーマが決まってから地図を描画する
   const theme = resolvedTheme === undefined ? undefined : resolvedTheme === "dark" ? "dark" : "light";
@@ -206,7 +217,7 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
     let cancelled = false;
     let collapseTimer: ReturnType<typeof setTimeout> | undefined;
 
-    void loadMapLibre().then(({ Map, LngLatBounds }) => {
+    void loadMapLibre().then(({ Map, LngLatBounds, Marker }) => {
       if (cancelled) return;
       const bounds = coordinates.reduce(
         (acc, coordinate) => acc.extend(coordinate),
@@ -236,6 +247,21 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
       appliedFullscreenRef.current = fullscreenAtCreate;
       appliedStyleRef.current = styleAtCreate;
       fillMissingStyleImages(loadedMap);
+
+      // スタイルのフォントには日本語のグリフがない場合があるため、symbol レイヤーではなく DOM のマーカーで文字を出す
+      // 開始と終了が重なる周回ルートでも両方読めるよう、開始は点の上、終了は下に置く
+      // 左右に置くと地図の端や右上のボタンに隠れやすいため、はみ出しの小さい上下にする
+      const endpointLabels = [
+        { kind: "start", coordinate: coordinates[0], anchor: "bottom", offsetY: -ENDPOINT_LABEL_OFFSET_PX },
+        { kind: "end", coordinate: coordinates[coordinates.length - 1], anchor: "top", offsetY: ENDPOINT_LABEL_OFFSET_PX },
+      ] as const;
+      for (const { kind, coordinate, anchor, offsetY } of endpointLabels) {
+        const element = document.createElement("span");
+        element.className = ENDPOINT_LABEL_CLASS[kind];
+        element.textContent = endpointLabelText[kind];
+        new Marker({ element, anchor, offset: [0, offsetY] }).setLngLat(coordinate).addTo(loadedMap);
+      }
+
       loadedMap.on("load", () => {
         setPhase("fading");
         collapseTimer = setTimeout(() => {
@@ -261,7 +287,7 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
       map?.remove();
       setPhase("loading");
     };
-  }, [coordinates, theme, locale, online, getRouteStyle]);
+  }, [coordinates, theme, locale, endpointLabelText, online, getRouteStyle]);
 
   useEffect(() => {
     speedGradientRef.current = speedGradient;
