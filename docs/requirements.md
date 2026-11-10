@@ -148,6 +148,7 @@ The bottom navigation (`nav.home`, `nav.sessions`, `nav.map`, `nav.settings`) is
 - Map (route): MapLibre GL JS + OpenFreeMap
   - Styles: `positron`, `bright`, `liberty`, `dark`, `fiord`, `3d` (`liberty` with a 60° pitch). When no style has been chosen, `positron` is used in light mode and `dark` in dark mode. The chosen style is saved (see `data-model.md` §4).
   - Speed-colored route (`sessions.detail.map.speedColors.toggle`, on by default): the route is colored in 10 speed bands. Palette and scale come from the settings (see 7.5).
+  - Start and end points: the start is a hollow dot labeled `sessions.detail.map.endpoints.start` (outlined) above it; the end is a filled dot labeled `sessions.detail.map.endpoints.end` (filled) below it, so both stay readable when they overlap.
   - Fullscreen view and cooperative gestures (`sessions.detail.map.gesture*`).
   - When offline, `sessions.detail.map.offline` is shown instead of the map. When the session has no GPS points, `sessions.detail.map.noPoints` is shown.
 - Speed chart: built from GPS points with accuracy of 50 m or better, averaged down to at most 600 points.
