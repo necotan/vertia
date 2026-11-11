@@ -47,4 +47,8 @@ next-env.d.ts
 /docs/*
 !/docs/requirements.md
 !/docs/data-model.md
-/.claude
+# Claude Code: 共有する設定とフックだけ追跡する
+/.claude/*
+!/.claude/settings.json
+!/.claude/hooks/
+/.claude/hooks/.verified

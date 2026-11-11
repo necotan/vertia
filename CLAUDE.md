@@ -37,6 +37,7 @@ The specs are the source of truth for what to build; read the relevant section b
 - `public/sw.js`: hand-written Service Worker. Add any new page route to its `PAGES` list (`npm run lint` fails if they differ).
 - `public/maplibre/`: generated and git-ignored. Do not edit.
 - `.githooks/`: `pre-commit` (lint, type check) and `commit-msg` (line 1 format). Enable once per clone: `git config core.hooksPath .githooks`.
+- `.claude/`: Claude Code settings (denied git commands) and the Stop hook that runs lint and type check. `settings.local.json` is personal and git-ignored.
 - `docs/`: only the two specs are tracked; anything else there is git-ignored local notes. When behavior or a stored format changes, update the spec in the same change.
 
 ## Rules
