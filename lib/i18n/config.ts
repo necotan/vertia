@@ -8,7 +8,11 @@ export const defaultLocale: AppLocale = "ja";
 export const LOCALE_STORAGE_KEY = "vertia.locale";
 export const LOCALE_CHANGE_EVENT = "vertia:locale-change";
 
-export const messagesByLocale = { ja, en } as const;
+// 型は ja.json だけを見る (global.d.ts) ため、en との過不足をここで tsc に検出させる
+export const messagesByLocale = {
+  ja: ja satisfies typeof en,
+  en: en satisfies typeof ja,
+} as const;
 
 export function isAppLocale(value: unknown): value is AppLocale {
   return typeof value === "string" && (locales as readonly string[]).includes(value);

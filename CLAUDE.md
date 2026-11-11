@@ -21,22 +21,22 @@ The specs are the source of truth for what to build; read the relevant section b
 
 - `npm run dev`: dev server (`predev` copies the MapLibre worker to `public/maplibre/`)
 - `npm run build` / `npm run start`: production build and serve. The Service Worker is registered only in production builds.
-- `npm run lint`: ESLint
-- `npx tsc --noEmit`: type check (no npm script)
+- `npm run lint`: ESLint (warnings fail too), then `scripts/checkRoutes.mjs`
+- `npm run typecheck`: type check
 - `npm run generate:icons`: regenerate all icons from `assets/vertia-icon.png`
 - There is no test suite.
 
 ## After every change
 
-- Run `npm run lint` and `npx tsc --noEmit`.
-- If `messages/` changed, confirm `ja.json` and `en.json` have the same keys. `tsc` checks keys only against `ja.json` (`global.d.ts`).
+- Run `npm run lint` and `npm run typecheck`. They enforce the i18n literal rules, the `ja.json` / `en.json` key match, the network and React limits below, and the Service Worker page list; the git `pre-commit` hook runs both.
 
 ## Layout
 
 - `app/`: routes only; each page renders a screen from `components/<screen>/`. Shared UI: `components/ui/`.
 - `lib/db/`: Dexie schema, repository, export/import. `lib/drive/`: controller, recorder, stats, G-force; `renderer/` draws the Canvas.
-- `public/sw.js`: hand-written Service Worker. Add any new page route to its `PAGES` list.
+- `public/sw.js`: hand-written Service Worker. Add any new page route to its `PAGES` list (`npm run lint` fails if they differ).
 - `public/maplibre/`: generated and git-ignored. Do not edit.
+- `.githooks/`: `pre-commit` (lint, type check) and `commit-msg` (line 1 format). Enable once per clone: `git config core.hooksPath .githooks`.
 - `docs/`: only the two specs are tracked; anything else there is git-ignored local notes. When behavior or a stored format changes, update the spec in the same change.
 
 ## Rules
@@ -47,15 +47,15 @@ The specs are the source of truth for what to build; read the relevant section b
 
 ### Drive screen
 
-- MUST draw speed and G-force directly on the Canvas (`DriveRenderer`, `requestAnimationFrame`). NEVER route them through React state: GPS (~1 Hz) and motion (50–60 Hz) updates would re-render constantly. React receives only `DriveUiState`.
+- MUST draw speed and G-force directly on the Canvas (`DriveRenderer`, `requestAnimationFrame`). NEVER route them through React state: GPS (~1 Hz) and motion (50–60 Hz) updates would re-render constantly. React receives only `DriveUiState`. ESLint rejects importing `react` in `lib/drive/`.
 - The Canvas palette follows the app theme via `setDrivePalette` in `lib/drive/renderer/types.ts`.
 
 ### Data and network
 
 - NEVER add cloud sync, a server-side database, or authentication. All data stays in IndexedDB.
-- External requests are limited to OpenFreeMap (map) and Open-Meteo (weather). NEVER send session data. Weather requests send only coordinates rounded to 2 decimal places (~1 km, `roundCoord` in `lib/weather/openMeteo.ts`).
+- External requests are limited to OpenFreeMap (map) and Open-Meteo (weather). NEVER send session data. ESLint rejects `fetch` and other network APIs outside `lib/weather/openMeteo.ts` and `lib/regions.ts`; it does not check what is sent. Weather requests send only coordinates rounded to 2 decimal places (~1 km, `roundCoord` in `lib/weather/openMeteo.ts`).
 - Recording starts and stops manually only. Do not add automatic detection.
-- Keep `/sessions/detail?id=` a single static page. Do not convert it to a dynamic route; the Service Worker precaches it for offline use.
+- Keep `/sessions/detail?id=` a single static page. Do not add dynamic routes; the Service Worker precaches every page for offline use.
 
 ### Device support
 
@@ -65,8 +65,9 @@ The specs are the source of truth for what to build; read the relevant section b
 
 ### i18n
 
-- NEVER hard-code UI text in JSX or Canvas drawing. Use translation keys; pass Canvas text through `DriveLabels`.
+- NEVER hard-code UI text in JSX or Canvas drawing. Use translation keys; pass Canvas text through `DriveLabels`. ESLint rejects text in JSX and Japanese string literals, but not English strings in attributes or Canvas drawing; use keys there too.
 - MUST add every new key to both `messages/ja.json` and `messages/en.json` in the same change.
+- A symbol written directly in JSX must be in `allowedStrings` in `eslint.config.mjs`.
 - Nest keys as `page.section.element` (e.g. `sessions.detail.export.button`). Shared text goes in `common`, `nav`, `units`, `weather`, `languageOptions`.
 - Use `useTranslations("<namespace>")` and ICU `{name}` placeholders.
 - Load and save the locale only through `lib/i18n/config.ts` and `lib/i18n/I18nProvider.tsx` (client-side, no locale routing).
@@ -76,6 +77,12 @@ The specs are the source of truth for what to build; read the relevant section b
 - Write only why: the reason for a choice, workarounds for browser or library quirks (iOS Safari, MapLibre, Dexie, etc.), and constraints the code alone does not show.
 - Do not write what the code, names, or JSX already say (e.g. "ハンバーガーメニュー", "保存ボタン", "〜の処理"). If there is no why to explain, write no comment.
 - No decorative characters such as `---`, `===`, `***`.
+
+## Git workflow
+
+- Do not run `git checkout -b`, `commit`, `push`, PR creation, `merge`, or `pull`. The user runs them.
+- At the start of work, propose a branch name (`feature/xxx` or `fix/xxx`).
+- After code changes, run `git status` and `git diff`, then propose a commit message based on the actual diff.
 
 ## Commit messages
 

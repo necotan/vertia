@@ -95,6 +95,13 @@
 - iOS はタップ操作の中でしかモーションセンサーの許可ダイアログを出せません。そのため「測定を開始」ボタンを押したときに許可を求めます。
 - Service Worker の登録は本番ビルド（`npm run build` から `npm run start`）のときだけ行います。
 
+### Git フック（変更をコミットする場合）
+コミットする場合は、クローンごとに一度だけ `.githooks/` のフックを有効にします。
+```bash
+git config core.hooksPath .githooks
+```
+`pre-commit` が `npm run lint` と `npm run typecheck` を実行し、`commit-msg` が1行目の書式を検査します。アプリを動かすだけなら不要です。
+
 ### npm スクリプト
 
 | コマンド | 内容 |
@@ -102,7 +109,8 @@
 | `npm run dev` | 開発サーバーを起動（先に `copy:maplibre-worker` が走る） |
 | `npm run build` | 本番ビルド（先に `copy:maplibre-worker` が走る） |
 | `npm run start` | ビルド結果を起動 |
-| `npm run lint` | ESLint を実行 |
+| `npm run lint` | ESLint を実行し、Service Worker のページ一覧が `app/` と一致するか検査する |
+| `npm run typecheck` | 型検査（`ja.json` と `en.json` のキーの過不足も検査する） |
 | `npm run copy:maplibre-worker` | MapLibre の Worker を `public/maplibre/` にコピーする |
 | `npm run generate:icons` | `assets/vertia-icon.png` からファビコン・Apple 用・PWA 用のアイコンを生成する |
 | `npm run generate:boundaries -- <.shp> <.csv>` | 国土数値情報の行政区域データから、マップ画面の市区町村・都道府県の境界を `public/boundaries/` に生成する |
@@ -133,7 +141,7 @@ lib/
   format.ts           経過時間の表示フォーマット
   geo.ts              2 点間の距離計算、m/s から km/h 変換
 messages/             翻訳（ja.json / en.json）
-scripts/              アイコン・境界データの生成、MapLibre の Worker のコピー
+scripts/              アイコン・境界データの生成、MapLibre の Worker のコピー、ルートの検査
 public/               Service Worker、PWA 用アイコン、市区町村・都道府県の境界（boundaries/）
 ```
 
