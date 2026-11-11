@@ -14,7 +14,8 @@
     "prebuild": "npm run copy:maplibre-worker",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint --max-warnings 0 && node scripts/checkRoutes.mjs",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "dexie": "^4.4.6",

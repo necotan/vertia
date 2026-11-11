@@ -95,6 +95,13 @@ No server or database is needed. It runs on the Next.js development server.
 - iOS can only show the motion sensor permission dialog during a tap. That's why permission is requested when you press the "Start measuring" button.
 - The Service Worker is only registered in production builds (`npm run build` then `npm run start`).
 
+### Git Hooks (for committing changes)
+If you plan to commit, enable the hooks in `.githooks/` once per clone:
+```bash
+git config core.hooksPath .githooks
+```
+`pre-commit` runs `npm run lint` and `npm run typecheck`, and `commit-msg` checks the format of the first line. This is not needed just to run the app.
+
 ### npm Scripts
 
 | Command | Action |
@@ -102,7 +109,8 @@ No server or database is needed. It runs on the Next.js development server.
 | `npm run dev` | Start the development server (runs `copy:maplibre-worker` first) |
 | `npm run build` | Production build (runs `copy:maplibre-worker` first) |
 | `npm run start` | Start the built app |
-| `npm run lint` | Run ESLint |
+| `npm run lint` | Run ESLint, then check that the Service Worker page list matches `app/` |
+| `npm run typecheck` | Type check (also checks that `ja.json` and `en.json` have the same keys) |
 | `npm run copy:maplibre-worker` | Copy the MapLibre Worker to `public/maplibre/` |
 | `npm run generate:icons` | Generate favicons, Apple icons, and PWA icons from `assets/vertia-icon.png` |
 | `npm run generate:boundaries -- <.shp> <.csv>` | Generate the municipality and prefecture boundaries for the map screen in `public/boundaries/` from the National Land Numerical Information administrative area data |
@@ -133,7 +141,7 @@ lib/
   format.ts           Elapsed time formatting
   geo.ts              Distance between two points, m/s to km/h conversion
 messages/             Translations (ja.json / en.json)
-scripts/              Icon and boundary data generation, MapLibre Worker copy
+scripts/              Icon and boundary data generation, MapLibre Worker copy, route check
 public/               Service Worker, PWA icons, municipality and prefecture boundaries (boundaries/)
 ```
 
