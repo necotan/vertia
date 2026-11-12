@@ -36,7 +36,8 @@ const ENDPOINT_LABEL_OFFSET_PX = 14;
 const ENDPOINT_LABEL_HALF_WIDTH_PX = 24;
 const ENDPOINT_LABEL_EXTENT_PX = ENDPOINT_LABEL_OFFSET_PX + 22;
 const FIT_EDGE_GAP_PX = 12;
-const ROUTE_CASING_WIDTH_PX = 7;
+const ROUTE_LINE_WIDTH_PX = 5;
+const ROUTE_CASING_WIDTH_PX = 8;
 const ROUTE_CASING_HALF_WIDTH_PX = ROUTE_CASING_WIDTH_PX / 2;
 // 塗りつぶしの開始点と二重丸の終了点に合わせ、ラベルも塗りつぶしと枠線だけにする
 const ENDPOINT_LABEL_BASE_CLASS =
@@ -157,6 +158,7 @@ function routeCamera(
 type Coordinate = [number, number];
 type StyleSpecification = Parameters<TransformStyleFunction>[1];
 type RouteStyle = Pick<StyleSpecification, "sources" | "layers">;
+type LayerSpec = StyleSpecification["layers"][number];
 type Visibility = "visible" | "none";
 
 type RouteData = {
@@ -208,14 +210,14 @@ function buildRouteStyle({ coordinates, speedGradient, speedColors }: RouteData,
         type: "line",
         source: "route",
         layout: { "line-join": "round", "line-cap": "round", visibility: visibility.line },
-        paint: { "line-color": colors.line, "line-width": 4 },
+        paint: { "line-color": colors.line, "line-width": ROUTE_LINE_WIDTH_PX },
       },
       {
         id: "route-speed-line",
         type: "line",
         source: "route",
         layout: { "line-join": "round", "line-cap": "round", visibility: visibility.speed },
-        paint: { "line-gradient": speedGradient, "line-width": 4 },
+        paint: { "line-gradient": speedGradient, "line-width": ROUTE_LINE_WIDTH_PX },
       },
       {
         id: "endpoints",
@@ -238,6 +240,26 @@ function buildRouteStyle({ coordinates, speedGradient, speedColors }: RouteData,
       },
     ],
   };
+}
+
+// 地名を線で隠さないよう、線は symbol 以外の最後のレイヤーのすぐ上に入れる
+// dark などは水域名や道路名の symbol が道路より前にあり、最初の symbol の下では線が道路や境界線に隠れる
+// 開始・終了の点は文字に隠れないよう一番上に置く
+function routeLayerBeforeId(layer: LayerSpec, styleLayers: LayerSpec[]): string | undefined {
+  if (layer.type !== "line") return undefined;
+  const lastIndex = styleLayers.findLastIndex((styleLayer) => styleLayer.type !== "symbol");
+  return styleLayers[lastIndex + 1]?.id;
+}
+
+function insertRouteLayers(styleLayers: LayerSpec[], routeLayers: LayerSpec[]): LayerSpec[] {
+  const layers = [...styleLayers];
+  for (const layer of routeLayers) {
+    const beforeId = routeLayerBeforeId(layer, styleLayers);
+    const index = beforeId === undefined ? -1 : layers.findIndex((styleLayer) => styleLayer.id === beforeId);
+    if (index === -1) layers.push(layer);
+    else layers.splice(index, 0, layer);
+  }
+  return layers;
 }
 
 function applyTiltGestures(map: MapLibreMap, pitch: number) {
@@ -400,7 +422,8 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
         if (loadedMap.getSource("route")) return;
         const route = getRouteStyle(style.dark);
         for (const [id, source] of Object.entries(route.sources)) loadedMap.addSource(id, source);
-        for (const layer of route.layers) loadedMap.addLayer(layer);
+        const styleLayers = loadedMap.getStyle().layers;
+        for (const layer of route.layers) loadedMap.addLayer(layer, routeLayerBeforeId(layer, styleLayers));
       });
     });
 
@@ -459,7 +482,7 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
           return {
             ...next,
             sources: { ...next.sources, ...route.sources },
-            layers: [...next.layers, ...route.layers],
+            layers: insertRouteLayers(next.layers, route.layers),
           };
         },
       });
