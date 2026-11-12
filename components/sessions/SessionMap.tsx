@@ -32,12 +32,12 @@ const ROUTE_COLORS = {
 
 // 点の半径と枠線の幅（endpoints レイヤー）に、ラベルとの隙間を足した距離
 const ENDPOINT_LABEL_OFFSET_PX = 14;
-// 白抜きの開始点と塗りつぶしの終了点に合わせ、ラベルも枠線だけと塗りつぶしにする
+// 塗りつぶしの開始点と二重丸の終了点に合わせ、ラベルも塗りつぶしと枠線だけにする
 const ENDPOINT_LABEL_BASE_CLASS =
   "pointer-events-none whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-semibold leading-4 backdrop-blur-md";
 const ENDPOINT_LABEL_CLASS = {
-  start: `${ENDPOINT_LABEL_BASE_CLASS} border-foreground bg-background/90 text-foreground`,
-  end: `${ENDPOINT_LABEL_BASE_CLASS} border-foreground bg-foreground/90 text-background`,
+  start: `${ENDPOINT_LABEL_BASE_CLASS} border-foreground bg-foreground/90 text-background`,
+  end: `${ENDPOINT_LABEL_BASE_CLASS} border-foreground bg-background/90 text-foreground`,
 } as const;
 
 const FULLSCREEN_HISTORY_KEY = "vertiaSessionMapFullscreen";
@@ -122,10 +122,18 @@ function buildRouteStyle({ coordinates, speedGradient, speedColors }: RouteData,
         source: "endpoints",
         paint: {
           "circle-radius": 6,
-          "circle-color": ["match", ["get", "kind"], "start", colors.casing, colors.line],
+          "circle-color": ["match", ["get", "kind"], "start", colors.line, colors.casing],
           "circle-stroke-color": colors.line,
           "circle-stroke-width": 3,
         },
+      },
+      // circle レイヤーは1つの円しか描けないため、終了点の二重丸の中心は別のレイヤーで重ねる
+      {
+        id: "endpoints-end-center",
+        type: "circle",
+        source: "endpoints",
+        filter: ["==", ["get", "kind"], "end"],
+        paint: { "circle-radius": 3, "circle-color": colors.line },
       },
     ],
   };
