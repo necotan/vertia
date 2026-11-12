@@ -1,11 +1,20 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import type { Ref } from "react";
 import { useSpeedPalette } from "@/lib/routeColorMode";
 import { SPEED_LEGEND_TICKS, SPEED_PALETTES, speedBandBoundary } from "@/lib/routeSpeed";
 import { speedUnitOf, useDistanceUnit } from "@/lib/units";
 
-export function RouteSpeedLegend({ thresholds, className }: { thresholds: readonly number[]; className: string }) {
+export function RouteSpeedLegend({
+  ref,
+  thresholds,
+  className,
+}: {
+  ref?: Ref<HTMLDivElement>;
+  thresholds: readonly number[];
+  className: string;
+}) {
   const t = useTranslations("sessions.detail.map.speedColors");
   const tUnits = useTranslations("units");
   const unit = useDistanceUnit();
@@ -14,6 +23,7 @@ export function RouteSpeedLegend({ thresholds, className }: { thresholds: readon
 
   return (
     <div
+      ref={ref}
       role="img"
       aria-label={t("legend")}
       className={`pointer-events-none rounded-lg border border-border bg-background/90 px-2.5 pb-1 pt-2 text-foreground backdrop-blur-md ${className}`}
