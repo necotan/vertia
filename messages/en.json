@@ -62,7 +62,7 @@
         "exitFullscreen": "Exit fullscreen",
         "endpoints": {
           "start": "Start",
-          "end": "Finish"
+          "end": "Goal"
         },
         "speedColors": {
           "toggle": "Color by speed",
