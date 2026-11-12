@@ -3,7 +3,7 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Gauge, Layers, Map as MapIcon, Maximize2, Minimize2 } from "lucide-react";
 import type {
-  FitBoundsOptions,
+  JumpToOptions,
   LngLatBounds,
   Map as MapLibreMap,
   TransformStyleFunction,
@@ -36,6 +36,8 @@ const ENDPOINT_LABEL_OFFSET_PX = 14;
 const ENDPOINT_LABEL_HALF_WIDTH_PX = 24;
 const ENDPOINT_LABEL_EXTENT_PX = ENDPOINT_LABEL_OFFSET_PX + 22;
 const FIT_EDGE_GAP_PX = 12;
+const ROUTE_CASING_WIDTH_PX = 7;
+const ROUTE_CASING_HALF_WIDTH_PX = ROUTE_CASING_WIDTH_PX / 2;
 // 塗りつぶしの開始点と二重丸の終了点に合わせ、ラベルも塗りつぶしと枠線だけにする
 const ENDPOINT_LABEL_BASE_CLASS =
   "pointer-events-none whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-semibold leading-4 backdrop-blur-md";
@@ -47,7 +49,10 @@ const ENDPOINT_LABEL_CLASS = {
 const FULLSCREEN_HISTORY_KEY = "vertiaSessionMapFullscreen";
 const STYLE_SHEET_HISTORY_KEY = "vertiaSessionMapStyleSheet";
 
-function getFitBoundsOptions(fullscreen: boolean, button: HTMLElement | null, pitch: number): FitBoundsOptions {
+type Padding = { top: number; bottom: number; left: number; right: number };
+type FitOptions = { padding: Padding; maxZoom: number; pitch: number; bearing: number };
+
+function getFitBoundsOptions(fullscreen: boolean, button: HTMLElement | null, pitch: number): FitOptions {
   const top = button ? button.offsetTop + button.offsetHeight + 16 : 96;
   // 右上のボタンは縦に並ぶため、ルートと開始・終了のラベルをボタンの列より左に収める
   const buttonColumnWidth = button?.offsetParent ? button.offsetParent.clientWidth - button.offsetLeft : 0;
@@ -65,6 +70,88 @@ function getFitBoundsOptions(fullscreen: boolean, button: HTMLElement | null, pi
     pitch,
     bearing: 0,
   };
+}
+
+type Rect = { left: number; top: number; right: number; bottom: number };
+
+function intersects(a: Rect, b: Rect): boolean {
+  return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+}
+
+// 凡例と地図はどちらも同じ枠いっぱいに置かれているため、offset の座標をそのまま地図の画面座標として扱える
+function elementRect(element: HTMLElement): Rect {
+  return {
+    left: element.offsetLeft,
+    top: element.offsetTop,
+    right: element.offsetLeft + element.offsetWidth,
+    bottom: element.offsetTop + element.offsetHeight,
+  };
+}
+
+function routeOverlaps(map: MapLibreMap, coordinates: Coordinate[], area: Rect): boolean {
+  const lineArea = {
+    left: area.left - ROUTE_CASING_HALF_WIDTH_PX,
+    top: area.top - ROUTE_CASING_HALF_WIDTH_PX,
+    right: area.right + ROUTE_CASING_HALF_WIDTH_PX,
+    bottom: area.bottom + ROUTE_CASING_HALF_WIDTH_PX,
+  };
+  const lineOverlaps = coordinates.some((coordinate) => {
+    const { x, y } = map.project(coordinate);
+    return x > lineArea.left && x < lineArea.right && y > lineArea.top && y < lineArea.bottom;
+  });
+  if (lineOverlaps) return true;
+  const start = map.project(coordinates[0]);
+  const end = map.project(coordinates[coordinates.length - 1]);
+  const startLabel = {
+    left: start.x - ENDPOINT_LABEL_HALF_WIDTH_PX,
+    top: start.y - ENDPOINT_LABEL_EXTENT_PX,
+    right: start.x + ENDPOINT_LABEL_HALF_WIDTH_PX,
+    bottom: start.y,
+  };
+  const endLabel = {
+    left: end.x - ENDPOINT_LABEL_HALF_WIDTH_PX,
+    top: end.y,
+    right: end.x + ENDPOINT_LABEL_HALF_WIDTH_PX,
+    bottom: end.y + ENDPOINT_LABEL_EXTENT_PX,
+  };
+  return intersects(startLabel, area) || intersects(endLabel, area);
+}
+
+// 凡例に重なるときだけ、凡例の下か右にルートを収める
+// 小さくしすぎないよう、大きく表示できる方を選ぶ
+function routeCamera(
+  map: MapLibreMap,
+  bounds: LngLatBounds,
+  coordinates: Coordinate[],
+  options: FitOptions,
+  legend: HTMLElement | null,
+): JumpToOptions | undefined {
+  const cameraFor = (padding: Padding) => {
+    const camera = map.cameraForBounds(bounds, { ...options, padding });
+    return camera && { ...camera, pitch: options.pitch };
+  };
+  const base = cameraFor(options.padding);
+  if (!base || !legend) return base;
+
+  const legendRect = elementRect(legend);
+  // map.project は現在のカメラで計算するため、一度動かして判定し、描画される前に元へ戻す
+  const current = { center: map.getCenter(), zoom: map.getZoom(), bearing: map.getBearing(), pitch: map.getPitch() };
+  map.jumpTo(base);
+  const overlaps = routeOverlaps(map, coordinates, legendRect);
+  map.jumpTo(current);
+  if (!overlaps) return base;
+
+  const { padding } = options;
+  const below = cameraFor({
+    ...padding,
+    top: Math.max(padding.top, legendRect.bottom + ENDPOINT_LABEL_EXTENT_PX + FIT_EDGE_GAP_PX),
+  });
+  const beside = cameraFor({
+    ...padding,
+    left: Math.max(padding.left, legendRect.right + ENDPOINT_LABEL_HALF_WIDTH_PX + FIT_EDGE_GAP_PX),
+  });
+  if (!below || !beside) return below ?? beside ?? base;
+  return (below.zoom ?? 0) >= (beside.zoom ?? 0) ? below : beside;
 }
 
 type Coordinate = [number, number];
@@ -114,7 +201,7 @@ function buildRouteStyle({ coordinates, speedGradient, speedColors }: RouteData,
         type: "line",
         source: "route",
         layout: { "line-join": "round", "line-cap": "round" },
-        paint: { "line-color": colors.casing, "line-width": 7 },
+        paint: { "line-color": colors.casing, "line-width": ROUTE_CASING_WIDTH_PX },
       },
       {
         id: "route-line",
@@ -182,6 +269,9 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
   const mapRef = useRef<MapLibreMap | null>(null);
   const boundsRef = useRef<LngLatBounds | null>(null);
   const fullscreenButtonRef = useRef<HTMLButtonElement>(null);
+  const legendRef = useRef<HTMLDivElement>(null);
+  // 利用者が地図を動かした後は、凡例の表示を切り替えても表示範囲を変えない
+  const userMovedRef = useRef(false);
   // 全画面を開いたときに積んだ履歴のエントリが、まだ残っているか
   const historyEntryRef = useRef(false);
   const styleSheetEntryRef = useRef(false);
@@ -204,6 +294,17 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
         { coordinates, speedGradient: speedGradientRef.current, speedColors: speedColorsRef.current },
         darkStyle,
       ),
+    [coordinates],
+  );
+  const fitRoute = useCallback(
+    (map: MapLibreMap, bounds: LngLatBounds, fullscreen: boolean, pitch: number, animate: boolean) => {
+      const options = getFitBoundsOptions(fullscreen, fullscreenButtonRef.current, pitch);
+      const camera = routeCamera(map, bounds, coordinates, options, legendRef.current);
+      if (!camera) return;
+      userMovedRef.current = false;
+      if (animate) map.easeTo(camera);
+      else map.jumpTo(camera);
+    },
     [coordinates],
   );
 
@@ -252,8 +353,6 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
       map = new Map({
         container,
         style: style.url,
-        bounds,
-        fitBoundsOptions: getFitBoundsOptions(fullscreenAtCreate, fullscreenButtonRef.current, style.pitch),
         pitch: style.pitch,
         // 全画面では1本指で地図を動かせるようにする
         cooperativeGestures: !fullscreenAtCreate,
@@ -268,6 +367,11 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
       boundsRef.current = bounds;
       appliedFullscreenRef.current = fullscreenAtCreate;
       appliedStyleRef.current = styleAtCreate;
+      // 描画は次のフレームからなので、作成直後に動かしても初期位置は見えない
+      fitRoute(loadedMap, bounds, fullscreenAtCreate, style.pitch, false);
+      loadedMap.on("movestart", (event) => {
+        if (event.originalEvent) userMovedRef.current = true;
+      });
       fillMissingStyleImages(loadedMap);
 
       // スタイルのフォントには日本語のグリフがない場合があるため、symbol レイヤーではなく DOM のマーカーで文字を出す
@@ -309,7 +413,7 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
       map?.remove();
       setPhase("loading");
     };
-  }, [coordinates, theme, locale, endpointLabelText, online, getRouteStyle]);
+  }, [coordinates, theme, locale, endpointLabelText, online, getRouteStyle, fitRoute]);
 
   useEffect(() => {
     speedGradientRef.current = speedGradient;
@@ -323,6 +427,14 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
     map.setLayoutProperty("route-line", "visibility", visibility.line);
     map.setLayoutProperty("route-speed-line", "visibility", visibility.speed);
   }, [speedGradient, speedColors]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const bounds = boundsRef.current;
+    const style = appliedStyleRef.current;
+    if (!map || !bounds || style === null || userMovedRef.current) return;
+    fitRoute(map, bounds, appliedFullscreenRef.current, MAP_STYLES[style].pitch, true);
+  }, [speedColors, fitRoute]);
 
   useEffect(() => {
     isFullscreenRef.current = isFullscreen;
@@ -360,14 +472,11 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
 
     if (fullscreenChanged) {
       map.resize();
-      map.fitBounds(bounds, {
-        ...getFitBoundsOptions(isFullscreen, fullscreenButtonRef.current, style.pitch),
-        animate: false,
-      });
+      fitRoute(map, bounds, isFullscreen, style.pitch, false);
     } else if (MAP_STYLES[previousStyle].pitch !== style.pitch) {
       map.easeTo({ pitch: style.pitch, bearing: 0 });
     }
-  }, [isFullscreen, activeStyle, getRouteStyle]);
+  }, [isFullscreen, activeStyle, getRouteStyle, fitRoute]);
 
   useMapPageBackground(isFullscreen && activeStyle !== undefined ? MAP_STYLES[activeStyle].swatch.background : null);
 
@@ -518,6 +627,7 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
               </button>
               {speedColors && (
                 <RouteSpeedLegend
+                  ref={legendRef}
                   thresholds={speedRoute.thresholds}
                   className={`absolute ${
                     isFullscreen
