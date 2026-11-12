@@ -32,6 +32,10 @@ const ROUTE_COLORS = {
 
 // 点の半径と枠線の幅（endpoints レイヤー）に、ラベルとの隙間を足した距離
 const ENDPOINT_LABEL_OFFSET_PX = 14;
+// ラベルは点を中心に左右へ広がり、上下には点からこの距離まで伸びる
+const ENDPOINT_LABEL_HALF_WIDTH_PX = 24;
+const ENDPOINT_LABEL_EXTENT_PX = ENDPOINT_LABEL_OFFSET_PX + 22;
+const FIT_EDGE_GAP_PX = 12;
 // 塗りつぶしの開始点と二重丸の終了点に合わせ、ラベルも塗りつぶしと枠線だけにする
 const ENDPOINT_LABEL_BASE_CLASS =
   "pointer-events-none whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-semibold leading-4 backdrop-blur-md";
@@ -45,8 +49,18 @@ const STYLE_SHEET_HISTORY_KEY = "vertiaSessionMapStyleSheet";
 
 function getFitBoundsOptions(fullscreen: boolean, button: HTMLElement | null, pitch: number): FitBoundsOptions {
   const top = button ? button.offsetTop + button.offsetHeight + 16 : 96;
+  // 右上のボタンは縦に並ぶため、ルートと開始・終了のラベルをボタンの列より左に収める
+  const buttonColumnWidth = button?.offsetParent ? button.offsetParent.clientWidth - button.offsetLeft : 0;
+  const right = buttonColumnWidth + ENDPOINT_LABEL_HALF_WIDTH_PX + FIT_EDGE_GAP_PX;
   return {
-    padding: fullscreen ? { top, bottom: 64, left: 48, right: 48 } : { top: 72, bottom: 40, left: 40, right: 40 },
+    padding: fullscreen
+      ? { top, bottom: 64, left: 48, right: Math.max(right, 48) }
+      : {
+          top: 72,
+          bottom: ENDPOINT_LABEL_EXTENT_PX + FIT_EDGE_GAP_PX,
+          left: 40,
+          right: Math.max(right, 40),
+        },
     maxZoom: 16,
     pitch,
     bearing: 0,
