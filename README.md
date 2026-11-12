@@ -69,7 +69,7 @@ The drive screen uses your location. If speed or GPS accuracy doesn't display co
 No server or database is needed. It runs on the Next.js development server.
 
 ### Prerequisites
-- Node.js 24.22.1 or later (24.x)
+- Node.js 24.22.3 or later (24.x)
 - To try the drive screen on a real device, an environment that can serve over HTTPS (such as a Vercel Preview)
 
 ### Steps
