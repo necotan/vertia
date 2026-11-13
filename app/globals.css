@@ -121,6 +121,11 @@ body {
   color: var(--foreground);
 }
 
+/* 入るだけ詰めると Data from で折り返して出典の区切りとずれるため、行の長さをそろえる */
+.maplibregl-ctrl-attrib-inner {
+  text-wrap: balance;
+}
+
 .maplibregl-ctrl.maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-button {
   background-color: transparent;
   background-image: var(--map-attrib-icon);

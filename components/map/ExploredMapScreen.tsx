@@ -34,8 +34,8 @@ import { detectExploredMapView, type ExploredMapView, saveExploredMapView } from
 import {
   collapseAttribution,
   fillMissingStyleImages,
-  interceptAttributionTap,
   loadMapLibre,
+  setupAttribution,
   useMapPageBackground,
   useOnline,
 } from "@/lib/mapLibre";
@@ -296,7 +296,7 @@ export function ExploredMapScreen() {
     let created: MapLibreMap | null = null;
     let cancelled = false;
     let collapseTimer: ReturnType<typeof setTimeout> | undefined;
-    const stopInterceptingAttributionTap = interceptAttributionTap(container);
+    const teardownAttribution = setupAttribution(container);
 
     void loadMapLibre().then(({ Map, Marker }) => {
       if (cancelled || activeStyleRef.current === undefined) return;
@@ -391,7 +391,7 @@ export function ExploredMapScreen() {
     return () => {
       cancelled = true;
       clearTimeout(collapseTimer);
-      stopInterceptingAttributionTap();
+      teardownAttribution();
       appliedStyleRef.current = null;
       stopProgressRef.current = null;
       created?.remove();
