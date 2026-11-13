@@ -14,7 +14,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import type { GpsPoint } from "@/lib/db/schema";
 import { GPS_ACCURACY_LIMIT_M } from "@/lib/drive/liveStats";
-import { fillMissingStyleImages, loadMapLibre, useMapPageBackground, useOnline } from "@/lib/mapLibre";
+import {
+  collapseAttribution,
+  fillMissingStyleImages,
+  interceptAttributionTap,
+  loadMapLibre,
+  useMapPageBackground,
+  useOnline,
+} from "@/lib/mapLibre";
 import { MAP_STYLES, type MapStyleId, saveMapStyle, themeMapStyle, useSavedMapStyle } from "@/lib/mapStyles";
 import { saveRouteSpeedColors, useRouteSpeedColors, useSpeedPalette, useSpeedScale } from "@/lib/routeColorMode";
 import { buildSpeedGradient, SPEED_PALETTES, type SpeedGradient } from "@/lib/routeSpeed";
@@ -361,6 +368,7 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
     let map: MapLibreMap | null = null;
     let cancelled = false;
     let collapseTimer: ReturnType<typeof setTimeout> | undefined;
+    const stopInterceptingAttributionTap = interceptAttributionTap(container);
 
     void loadMapLibre().then(({ Map, LngLatBounds, Marker }) => {
       if (cancelled) return;
@@ -412,11 +420,7 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
 
       loadedMap.on("load", () => {
         setPhase("fading");
-        collapseTimer = setTimeout(() => {
-          container
-            .querySelector(".maplibregl-ctrl-attrib.maplibregl-compact-show")
-            ?.classList.remove("maplibregl-compact-show");
-        }, ATTRIBUTION_COLLAPSE_MS);
+        collapseTimer = setTimeout(() => collapseAttribution(container), ATTRIBUTION_COLLAPSE_MS);
 
         // 読み込み前にスタイルを切り替えた場合は、切り替え時にルートを追加済み
         if (loadedMap.getSource("route")) return;
@@ -430,6 +434,7 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
     return () => {
       cancelled = true;
       clearTimeout(collapseTimer);
+      stopInterceptingAttributionTap();
       mapRef.current = null;
       boundsRef.current = null;
       appliedStyleRef.current = null;
