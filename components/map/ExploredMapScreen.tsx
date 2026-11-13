@@ -31,7 +31,14 @@ import {
   toCoarseCells,
 } from "@/lib/exploredCells";
 import { detectExploredMapView, type ExploredMapView, saveExploredMapView } from "@/lib/exploredMapView";
-import { fillMissingStyleImages, loadMapLibre, useMapPageBackground, useOnline } from "@/lib/mapLibre";
+import {
+  collapseAttribution,
+  fillMissingStyleImages,
+  interceptAttributionTap,
+  loadMapLibre,
+  useMapPageBackground,
+  useOnline,
+} from "@/lib/mapLibre";
 import { MAP_STYLES, type MapStyleId, saveMapStyle, themeMapStyle, useSavedMapStyle } from "@/lib/mapStyles";
 import {
   type Bounds,
@@ -289,6 +296,7 @@ export function ExploredMapScreen() {
     let created: MapLibreMap | null = null;
     let cancelled = false;
     let collapseTimer: ReturnType<typeof setTimeout> | undefined;
+    const stopInterceptingAttributionTap = interceptAttributionTap(container);
 
     void loadMapLibre().then(({ Map, Marker }) => {
       if (cancelled || activeStyleRef.current === undefined) return;
@@ -366,11 +374,7 @@ export function ExploredMapScreen() {
       loadedMap.on("load", () => {
         // 未移動なら、移動先のタイルを待つため閉じない
         if (fittedRef.current) setPhase("fading");
-        collapseTimer = setTimeout(() => {
-          container
-            .querySelector(".maplibregl-ctrl-attrib.maplibregl-compact-show")
-            ?.classList.remove("maplibregl-compact-show");
-        }, ATTRIBUTION_COLLAPSE_MS);
+        collapseTimer = setTimeout(() => collapseAttribution(container), ATTRIBUTION_COLLAPSE_MS);
 
         // 読み込み前にスタイルを切り替えた場合は、切り替え時にセルを追加済み
         if (!loadedMap.getSource("explored-fine") && shapesRef.current) {
@@ -387,6 +391,7 @@ export function ExploredMapScreen() {
     return () => {
       cancelled = true;
       clearTimeout(collapseTimer);
+      stopInterceptingAttributionTap();
       appliedStyleRef.current = null;
       stopProgressRef.current = null;
       created?.remove();
