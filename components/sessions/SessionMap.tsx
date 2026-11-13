@@ -17,8 +17,8 @@ import { GPS_ACCURACY_LIMIT_M } from "@/lib/drive/liveStats";
 import {
   collapseAttribution,
   fillMissingStyleImages,
-  interceptAttributionTap,
   loadMapLibre,
+  setupAttribution,
   useMapPageBackground,
   useOnline,
 } from "@/lib/mapLibre";
@@ -368,7 +368,7 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
     let map: MapLibreMap | null = null;
     let cancelled = false;
     let collapseTimer: ReturnType<typeof setTimeout> | undefined;
-    const stopInterceptingAttributionTap = interceptAttributionTap(container);
+    const teardownAttribution = setupAttribution(container);
 
     void loadMapLibre().then(({ Map, LngLatBounds, Marker }) => {
       if (cancelled) return;
@@ -434,7 +434,7 @@ export function SessionMap({ points }: { points: GpsPoint[] }) {
     return () => {
       cancelled = true;
       clearTimeout(collapseTimer);
-      stopInterceptingAttributionTap();
+      teardownAttribution();
       mapRef.current = null;
       boundsRef.current = null;
       appliedStyleRef.current = null;
