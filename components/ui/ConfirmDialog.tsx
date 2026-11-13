@@ -39,7 +39,7 @@ export function ConfirmDialog({
         <DialogTitle>{title}</DialogTitle>
         <DialogDescription className="mt-2 whitespace-pre-wrap">{message}</DialogDescription>
         <DialogFooter>
-          <DialogActionButton variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+          <DialogActionButton variant="secondary" onClick={() => onOpenChange(false)} disabled={loading}>
             {cancelLabel ?? t("cancel")}
           </DialogActionButton>
           <DialogActionButton destructive={destructive} onClick={onConfirm} disabled={loading}>
