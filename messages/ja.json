@@ -150,9 +150,6 @@
       "placeName": "{prefecture}{place}",
       "placeNameWard": "{prefecture}{place}",
       "placeWard": "{city}{ward}",
-      "placeRoute": "{from} → {to}",
-      "placeRouteInPrefecture": "{prefecture}{from} → {to}",
-      "placeRouteInCity": "{prefecture}{city}{from} → {to}",
       "municipalityKinds": {
         "city": "{name}市",
         "town": "{name}町",
