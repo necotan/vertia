@@ -229,33 +229,14 @@ export function ShareCardScreen() {
       if (base !== name(prefecture) || !municipality.kind) return base;
       return t(`municipalityKinds.${municipality.kind}`, { name: base });
     };
-    // 都道府県を除いた場所。政令市は区まで出す
-    const local = (place: Place) =>
-      place.ward ? t("placeWard", { city: name(place.municipality), ward: name(place.ward) }) : municipalityName(place);
-    const single = (place: Place) =>
-      t(place.ward ? "placeNameWard" : "placeName", { prefecture: name(place.prefecture), place: local(place) });
-
-    if (!start || !end) {
-      const place = start ?? end;
-      return place ? single(place) : null;
-    }
-    if (start.municipality.id === end.municipality.id) {
-      // 同じ政令市の中の移動では、市名を1回だけ出す
-      if (start.ward && end.ward && start.ward.id !== end.ward.id) {
-        return t("placeRouteInCity", {
-          prefecture: name(start.prefecture),
-          city: name(start.municipality),
-          from: name(start.ward),
-          to: name(end.ward),
-        });
-      }
-      return single(start.ward ? start : end);
-    }
-    // 同じ都道府県の中の移動では、都道府県名を1回だけ出す
-    if (start.prefecture.id === end.prefecture.id) {
-      return t("placeRouteInPrefecture", { prefecture: name(start.prefecture), from: local(start), to: local(end) });
-    }
-    return t("placeRoute", { from: single(start), to: single(end) });
+    // 行き先を表すため到着地を出し、到着地が見つからないとき（国外など）だけ出発地を出す
+    const place = end ?? start;
+    if (!place) return null;
+    // 政令市は区まで出す
+    const local = place.ward
+      ? t("placeWard", { city: name(place.municipality), ward: name(place.ward) })
+      : municipalityName(place);
+    return t(place.ward ? "placeNameWard" : "placeName", { prefecture: name(place.prefecture), place: local });
   }, [places, routeEnds, locale, t]);
 
   const summary = session?.summary ?? null;
