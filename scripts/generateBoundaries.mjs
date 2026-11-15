@@ -1,4 +1,4 @@
-// 国土数値情報の行政区域データ (N03) から、マップ画面で使う市区町村と都道府県の境界を public/boundaries/ に生成する
+// 国土数値情報の行政区域データ (N03) から、マップ画面で使う市区町村と都道府県、シェアカードで使う政令市の区の境界を public/boundaries/ に生成する
 // N03 の全国データ (シェープファイル) を https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-2025.html から取得し、.shp のパスを渡す
 // N03 に英語名がないため、日本郵便の郵便番号データ (ローマ字) の KEN_ALL_ROME.CSV のパスも渡す
 // https://www.post.japanpost.jp/service/search/zipcode/download/roman-zip.html
@@ -30,6 +30,9 @@ const ENGLISH_NAME_OVERRIDES = {
   "01700": "Shibetoro",
   "40344": "Sue",
 };
+
+// 英語名は種別を含まないため、県と同じ名前の市町村 (長野市, 岩手町) を英語で区別するときに使う
+const MUNICIPALITY_KINDS = { 市: "city", 町: "town", 村: "village", 区: "ward" };
 
 const [shpPath, romajiPath] = process.argv.slice(2);
 if (!shpPath?.endsWith(".shp") || !romajiPath) {
@@ -72,9 +75,32 @@ const prefectureOutput = await mapshaper.applyCommands(
 );
 const prefectures = JSON.parse(prefectureOutput["prefectures.json"]);
 
+// 政令市の区
+// シェアカードの場所を区まで出すためだけに使い、マップ画面では政令市を1つの地域のまま扱う
+// 点がどの区にあるかを調べるだけなので、市区町村と境目を揃えずに単独で間引く
+const wardOutput = await mapshaper.applyCommands(
+  [
+    "-i n03.shp",
+    "-filter '!!N03_005 && !N03_007.endsWith(\"000\")'",
+    "-dissolve2 N03_007 copy-fields=N03_001,N03_004,N03_005",
+    `-filter-islands min-area=${MIN_ISLAND_M2} remove-empty`,
+    `-simplify interval=${MUNICIPALITY_SIMPLIFY_M} keep-shapes`,
+    `-o wards.json format=geojson precision=${PRECISION}`,
+  ].join(" "),
+  input,
+);
+const wards = JSON.parse(wardOutput["wards.json"]);
+
 function toEnglishName(romaji) {
   // 郵便番号データは「ん」の後の b・m・p を m と書くが (GUMMA)、英語表記では n が一般的 (Gunma)
-  const name = romaji.replace(/M(?=[BMP])/g, "N");
+  // 2026年2月版から長音を重ねて書く (YUUBARI, CHUUOU) ようになったため、それ以前と同じ書き方 (Yubari, Chuo) に戻す
+  // 「っち」も CCH から英語表記で一般的な TCH にする (Kutchan)
+  const name = romaji
+    .replace(/M(?=[BMP])/g, "N")
+    .replace(/OO/g, "O")
+    .replace(/OU/g, "O")
+    .replace(/UU/g, "U")
+    .replace(/CCH/g, "TCH");
   return name[0] + name.slice(1).toLowerCase();
 }
 
@@ -92,6 +118,11 @@ function readEnglishNames(path) {
     // 長い名前は 35 文字で切られ、末尾の SHI や MACHI が欠けることがあるため、最初の語だけを使う
     names.set(`${prefecture}|${japaneseName}`, toEnglishName(words[prefixWords]));
     names.set(prefecture, toEnglishName(prefectureRomaji.split(" ")[0]));
+    // 政令市の区は郵便番号データにないため、SHI の次の語を使う
+    const wardWord = words[words.indexOf("SHI") + 1];
+    if (parts.length === 2 && parts[0].endsWith("市") && parts[1].endsWith("区") && words.includes("SHI") && wardWord) {
+      names.set(`${prefecture}|${parts[0]}|${parts[1]}`, toEnglishName(wardWord));
+    }
   }
   return names;
 }
@@ -152,7 +183,7 @@ rmSync(destination, { recursive: true, force: true });
 
 // 表示する範囲だけを読み込めるよう、1件ずつ別のファイルにする
 // 北海道全体のセルを求めるとスマホでは数秒止まるため、セル数とバッジの位置はここで求めておく
-const index = { resolution: CELL_RESOLUTION, municipality: [], prefecture: [] };
+const index = { resolution: CELL_RESOLUTION, municipality: [], prefecture: [], ward: [] };
 const levels = [
   {
     level: "municipality",
@@ -184,6 +215,7 @@ for (const { level, collection, idField, nameField, englishKey } of levels) {
       id,
       name: properties[nameField],
       nameEn,
+      ...(level === "municipality" && { kind: MUNICIPALITY_KINDS[properties[nameField].slice(-1)] }),
       bbox: bounds(coordinates),
       cellCount: cells.length,
       labelPoint: findLabelPoint(cells),
@@ -192,6 +224,17 @@ for (const { level, collection, idField, nameField, englishKey } of levels) {
   }
   index[level].sort((a, b) => a.id.localeCompare(b.id));
 }
+// 区はマップ画面の探索率に使わないため、セル数とバッジの位置は求めない
+for (const { properties, geometry } of wards.features) {
+  if (!geometry) continue;
+  const id = properties.N03_007;
+  const nameEn = ENGLISH_NAME_OVERRIDES[id] ?? englishNames.get(`${properties.N03_001}|${properties.N03_004}|${properties.N03_005}`);
+  if (!nameEn) missingEnglishNames.push(`${id} ${properties.N03_004}${properties.N03_005}`);
+  const coordinates = toMultiPolygon(geometry);
+  index.ward.push({ id, name: properties.N03_005, nameEn, bbox: bounds(coordinates) });
+  total += write(join("ward", `${id}.json`), { type: "MultiPolygon", coordinates });
+}
+index.ward.sort((a, b) => a.id.localeCompare(b.id));
 if (missingEnglishNames.length > 0) {
   // 合併などで郵便番号データと名前が合わなくなったら、ENGLISH_NAME_OVERRIDES に足す
   console.error(`English names not found:\n${missingEnglishNames.join("\n")}`);
@@ -200,5 +243,5 @@ if (missingEnglishNames.length > 0) {
 total += write("index.json", index);
 
 console.log(
-  `Generated ${index.municipality.length} municipalities and ${index.prefecture.length} prefectures from ${basename(shpPath)} (${(total / 1024 / 1024).toFixed(1)} MB)`,
+  `Generated ${index.municipality.length} municipalities, ${index.prefecture.length} prefectures and ${index.ward.length} wards from ${basename(shpPath)} (${(total / 1024 / 1024).toFixed(1)} MB)`,
 );

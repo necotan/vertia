@@ -7,16 +7,22 @@ const BOUNDARIES_PATH = "/boundaries";
 export type RegionLevel = "municipality" | "prefecture";
 
 export type Bounds = [number, number, number, number];
+export type MunicipalityKind = "city" | "town" | "village" | "ward";
+
 type RegionEntry = {
   id: string;
   name: string;
   nameEn: string;
+  // 市区町村だけにある
+  kind?: MunicipalityKind;
   bbox: Bounds;
   cellCount: number;
   // 範囲内にセルの中心が1つもない小さな島では null
   labelPoint: [number, number] | null;
 };
-type RegionIndex = { resolution: number } & Record<RegionLevel, RegionEntry[]>;
+type WardEntry = { id: string; name: string; nameEn: string; bbox: Bounds };
+// ward は区を生成する前の index.json にはない
+type RegionIndex = { resolution: number; ward?: WardEntry[] } & Record<RegionLevel, RegionEntry[]>;
 type RegionGeometry = { type: "MultiPolygon"; coordinates: MultiPolygonCoordinates };
 
 export type Region = RegionEntry & { level: RegionLevel; coordinates: MultiPolygonCoordinates };
@@ -81,6 +87,20 @@ export async function prefectureOf(municipality: Region): Promise<RegionName | n
   const code = municipality.id.slice(0, 2);
   const prefecture = index.prefecture.find(({ id }) => id === code);
   return prefecture ? { id: prefecture.id, name: prefecture.name, nameEn: prefecture.nameEn } : null;
+}
+
+// 政令市の区
+// 区のコードの1の位を0にしたものが市のコードのため、その市の区だけを調べる
+export async function findWardAt(municipality: Region, point: CellCenter): Promise<RegionName | null> {
+  const index = await fetchBoundary<RegionIndex>("index.json");
+  const cityCode = Number(municipality.id);
+  const candidates = (index.ward ?? []).filter(
+    ({ id, bbox }) => Math.floor(Number(id) / 10) * 10 === cityCode && boundsContain(bbox, point),
+  );
+  if (candidates.length === 0) return null;
+  const geometries = await Promise.all(candidates.map(({ id }) => fetchBoundary<RegionGeometry>(`ward/${id}.json`)));
+  const match = candidates.find((_, i) => multiPolygonContains(geometries[i].coordinates, point));
+  return match ? { id: match.id, name: match.name, nameEn: match.nameEn } : null;
 }
 
 // 東京都の小笠原諸島のような離れた島まで含めると広すぎるため、点を含む陸地だけの範囲を返す
