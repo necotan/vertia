@@ -1,7 +1,7 @@
 "use client";
 
 import { useLiveQuery } from "dexie-react-hooks";
-import { Check, ImagePlus } from "lucide-react";
+import { Check, ImagePlus, RotateCcw } from "lucide-react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
@@ -50,6 +50,8 @@ import { weatherCodeKey } from "@/lib/weather/weatherCode";
 
 // 設定を続けて変えている間に、毎回フル解像度で書き出さないよう待つ
 const OUTPUT_DEBOUNCE_MS = 300;
+// 長すぎると縦長の写真でカードの幅をはみ出すため
+const PLACE_MAX_LENGTH = 40;
 
 // 自由配置はプレビューをドラッグしたときだけになるため、選択肢には出さない
 const CORNERS = ["topLeft", "topRight", "bottomLeft", "bottomRight"] as const satisfies readonly ShareCardPosition[];
@@ -131,6 +133,10 @@ export function ShareCardScreen() {
   const [places, setPlaces] = useState<{ ends: [Point, Point]; result: Places } | null>(null);
   const [output, setOutput] = useState<{ input: unknown; blob: Blob } | null>(null);
   const [tab, setTab] = useState<ShareCardBlock>("route");
+  // 入力した地名
+  // null の間は自動で求めた地名を使う
+  // 記録ごとに違うため保存しない
+  const [customPlace, setCustomPlace] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -239,12 +245,16 @@ export function ShareCardScreen() {
     return t(place.ward ? "placeNameWard" : "placeName", { prefecture: name(place.prefecture), place: local });
   }, [places, routeEnds, locale, t]);
 
+  const placeValue = customPlace ?? placeText ?? "";
+  const placeEdited = customPlace !== null && customPlace !== (placeText ?? "");
+
   const summary = session?.summary ?? null;
   const weather = session?.weather ?? null;
   const available: Record<ShareCardItem, boolean> = {
     route: routePath !== null,
     date: true,
-    place: placeText !== null,
+    // 自動で見つからなくても（国外、オフライン）、入力すれば出せる
+    place: true,
     weather: weather !== null,
     distance: true,
     duration: true,
@@ -298,10 +308,10 @@ export function ShareCardScreen() {
               unit: tUnits(temperatureUnitOf[unit]),
             })
           : null,
-      place: show("place") ? placeText : null,
+      place: show("place") && placeValue.trim() !== "" ? placeValue.trim() : null,
       rows,
     };
-  }, [session, summary, weather, options.items, routePath, placeText, unit, format, t, tUnits, tWeather]);
+  }, [session, summary, weather, options.items, routePath, placeValue, unit, format, t, tUnits, tWeather]);
 
   // Noto Sans JP は文字ごとに分割されたファイルのため、描く文字を渡して必要な分を読み込む
   const sampleText = content
@@ -564,19 +574,55 @@ export function ShareCardScreen() {
                   />
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-x-4 py-1.5 sm:grid-cols-3">
-                  {infoItems.map((item) => (
-                    <CheckItem
-                      key={item}
-                      label={t(`items.${item}`)}
-                      checked={options.items[item] && available[item]}
-                      disabled={!available[item]}
-                      onChange={() =>
-                        updateOptions({ ...options, items: { ...options.items, [item]: !options.items[item] } })
-                      }
-                    />
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-2 gap-x-4 py-1.5 sm:grid-cols-3">
+                    {infoItems.map((item) => (
+                      <CheckItem
+                        key={item}
+                        label={t(`items.${item}`)}
+                        checked={options.items[item] && available[item]}
+                        disabled={!available[item]}
+                        onChange={() =>
+                          updateOptions({ ...options, items: { ...options.items, [item]: !options.items[item] } })
+                        }
+                      />
+                    ))}
+                  </div>
+                  {options.items.place && (
+                    <div className="space-y-1.5 py-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <label htmlFor="share-card-place" className="text-sm font-bold">
+                          {t("rows.place")}
+                        </label>
+                        {placeEdited && (
+                          <button
+                            type="button"
+                            onClick={() => setCustomPlace(null)}
+                            className="flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                          >
+                            <RotateCcw className="size-3.5" />
+                            {t("placeReset")}
+                          </button>
+                        )}
+                      </div>
+                      {/* iOS は 16px 未満の入力欄にフォーカスすると画面を拡大するため、text-base にする */}
+                      <input
+                        id="share-card-place"
+                        type="text"
+                        value={placeValue}
+                        placeholder={t("placePlaceholder")}
+                        maxLength={PLACE_MAX_LENGTH}
+                        enterKeyHint="done"
+                        autoComplete="off"
+                        onChange={(event) => setCustomPlace(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") event.currentTarget.blur();
+                        }}
+                        className="h-10 w-full rounded-lg border border-border bg-transparent px-3 text-base outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-foreground dark:bg-muted/40"
+                      />
+                    </div>
+                  )}
+                </>
               )}
               <div
                 className={`flex items-center justify-between gap-3 py-3 ${blockShown[tab] ? "" : "opacity-50"}`}
