@@ -18,7 +18,7 @@ import { downloadBlob } from "@/lib/download";
 import { GPS_ACCURACY_LIMIT_M } from "@/lib/drive/liveStats";
 import { loadCanvasFonts } from "@/lib/drive/renderer/types";
 import { formatDuration } from "@/lib/format";
-import { findRegionAt, prefectureOf, type Region, type RegionName } from "@/lib/regions";
+import { findRegionAt, findWardAt, prefectureOf, type Region, type RegionName } from "@/lib/regions";
 import { drawShareCard } from "@/lib/shareCard/draw";
 import {
   freePositionAt,
@@ -57,7 +57,8 @@ const CORNERS = ["topLeft", "topRight", "bottomLeft", "bottomRight"] as const sa
 // 文字の描画順と同じく、情報を経路より手前として当たり判定する
 const HIT_TEST_ORDER: readonly ShareCardBlock[] = ["info", "route"];
 
-type Place = { municipality: Region; prefecture: RegionName };
+// ward は政令市の区。政令市以外や、区の境界の際で見つからないときは null
+type Place = { municipality: Region; prefecture: RegionName; ward: RegionName | null };
 type Places = { start: Place | null; end: Place | null };
 type Point = { lat: number; lng: number };
 type Drag = { block: ShareCardBlock; offsetX: number; offsetY: number; free: ShareCardFreePosition };
@@ -201,8 +202,11 @@ export function ShareCardScreen() {
       try {
         const municipality = await findRegionAt("municipality", point);
         if (!municipality) return null;
-        const prefecture = await prefectureOf(municipality);
-        return prefecture ? { municipality, prefecture } : null;
+        const [prefecture, ward] = await Promise.all([
+          prefectureOf(municipality),
+          findWardAt(municipality, point).catch(() => null),
+        ]);
+        return prefecture ? { municipality, prefecture, ward } : null;
       } catch {
         return null;
       }
@@ -219,21 +223,39 @@ export function ShareCardScreen() {
     if (!places || places.ends !== routeEnds) return null;
     const { start, end } = places.result;
     const name = (region: RegionName) => (locale === "ja" ? region.name : region.nameEn);
-    const withPrefecture = (place: Place) =>
-      t("placeName", { prefecture: name(place.prefecture), municipality: name(place.municipality) });
-    if (start && end && start.municipality.id !== end.municipality.id) {
-      // 同じ都道府県の中の移動では、都道府県名を1回だけ出す
-      if (start.prefecture.id === end.prefecture.id) {
-        return t("placeRouteInPrefecture", {
+    // 英語名は種別を含まず、県庁所在地などは県と同じ名前になる (Nagano, Nagano) ため、そのときだけ種別を付ける
+    const municipalityName = ({ municipality, prefecture }: Place) => {
+      const base = name(municipality);
+      if (base !== name(prefecture) || !municipality.kind) return base;
+      return t(`municipalityKinds.${municipality.kind}`, { name: base });
+    };
+    // 都道府県を除いた場所。政令市は区まで出す
+    const local = (place: Place) =>
+      place.ward ? t("placeWard", { city: name(place.municipality), ward: name(place.ward) }) : municipalityName(place);
+    const single = (place: Place) =>
+      t(place.ward ? "placeNameWard" : "placeName", { prefecture: name(place.prefecture), place: local(place) });
+
+    if (!start || !end) {
+      const place = start ?? end;
+      return place ? single(place) : null;
+    }
+    if (start.municipality.id === end.municipality.id) {
+      // 同じ政令市の中の移動では、市名を1回だけ出す
+      if (start.ward && end.ward && start.ward.id !== end.ward.id) {
+        return t("placeRouteInCity", {
           prefecture: name(start.prefecture),
-          from: name(start.municipality),
-          to: name(end.municipality),
+          city: name(start.municipality),
+          from: name(start.ward),
+          to: name(end.ward),
         });
       }
-      return t("placeRoute", { from: withPrefecture(start), to: withPrefecture(end) });
+      return single(start.ward ? start : end);
     }
-    const place = start ?? end;
-    return place ? withPrefecture(place) : null;
+    // 同じ都道府県の中の移動では、都道府県名を1回だけ出す
+    if (start.prefecture.id === end.prefecture.id) {
+      return t("placeRouteInPrefecture", { prefecture: name(start.prefecture), from: local(start), to: local(end) });
+    }
+    return t("placeRoute", { from: single(start), to: single(end) });
   }, [places, routeEnds, locale, t]);
 
   const summary = session?.summary ?? null;
