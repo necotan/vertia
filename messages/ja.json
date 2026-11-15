@@ -125,8 +125,11 @@
       "rows": {
         "show": "表示",
         "position": "位置",
-        "size": "サイズ"
+        "size": "サイズ",
+        "place": "地名"
       },
+      "placePlaceholder": "地名を入力",
+      "placeReset": "自動に戻す",
       "positions": {
         "topLeft": "左上",
         "topRight": "右上",

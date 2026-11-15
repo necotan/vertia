@@ -125,8 +125,11 @@
       "rows": {
         "show": "Show",
         "position": "Position",
-        "size": "Size"
+        "size": "Size",
+        "place": "Place name"
       },
+      "placePlaceholder": "Enter a place name",
+      "placeReset": "Use detected name",
       "positions": {
         "topLeft": "Top left",
         "topRight": "Top right",
