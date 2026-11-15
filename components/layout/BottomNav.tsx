@@ -15,7 +15,7 @@ const navItems: { key: NavKey; href: string; icon: LucideIcon }[] = [
   { key: "settings", href: "/settings", icon: Settings },
 ];
 
-const HIDDEN_PATH_PREFIXES = ["/drive", "/map"];
+const HIDDEN_PATH_PREFIXES = ["/drive", "/map", "/sessions/share"];
 
 const PENDING_TIMEOUT_MS = 5000;
 

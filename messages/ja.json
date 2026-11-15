@@ -97,7 +97,67 @@
         "confirmTitle": "この記録を削除しますか？",
         "confirmMessage": "GPSと加速度のデータもすべて削除されます。この操作は取り消せません。",
         "failed": "記録を削除できませんでした"
+      },
+      "shareCard": {
+        "button": "シェアカードを作成"
       }
+    },
+    "share": {
+      "title": "シェアカード",
+      "image": {
+        "change": "写真を変更",
+        "failed": "写真を読み込めませんでした"
+      },
+      "items": {
+        "route": "経路",
+        "date": "日時",
+        "place": "場所",
+        "weather": "天気・気温",
+        "distance": "距離",
+        "duration": "走行時間",
+        "speed": "速度",
+        "gForce": "加速度（G）"
+      },
+      "blocks": {
+        "route": "経路",
+        "info": "情報"
+      },
+      "rows": {
+        "show": "表示",
+        "position": "位置",
+        "size": "サイズ"
+      },
+      "positions": {
+        "topLeft": "左上",
+        "topRight": "右上",
+        "bottomLeft": "左下",
+        "bottomRight": "右下"
+      },
+      "colors": {
+        "title": "文字色",
+        "white": "白",
+        "black": "黒"
+      },
+      "labels": {
+        "distance": "距離",
+        "duration": "時間",
+        "avgSpeed": "平均速度",
+        "maxSpeed": "最高速度",
+        "maxG": "最大G",
+        "maxLateralG": "横G",
+        "maxLongitudinalG": "前後G"
+      },
+      "placeName": "{prefecture}{municipality}",
+      "placeRoute": "{from} → {to}",
+      "placeRouteInPrefecture": "{prefecture}{from} → {to}",
+      "weatherValue": "{condition} {temperature}{unit}",
+      "scaleValue": "{scale}x",
+      "actions": {
+        "share": "共有する",
+        "preparing": "準備中…"
+      },
+      "renderFailed": "画像を作成できませんでした",
+      "shareFailed": "共有できませんでした"
     }
   },
   "home": {

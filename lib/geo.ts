@@ -7,3 +7,13 @@ export function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: 
   const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
   return 2 * EARTH_RADIUS_M * Math.asin(Math.min(1, Math.sqrt(a)));
 }
+
+// Web メルカトル座標（0〜1、y は北が小さい）
+export function mercatorX(lng: number): number {
+  return lng / 360 + 0.5;
+}
+
+export function mercatorY(lat: number): number {
+  const sin = Math.sin((lat * Math.PI) / 180);
+  return 0.5 - (0.25 * Math.log((1 + sin) / (1 - sin))) / Math.PI;
+}

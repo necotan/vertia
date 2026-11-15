@@ -1,5 +1,6 @@
 import type { GpsPoint } from "@/lib/db/schema";
 import { GPS_ACCURACY_LIMIT_M, resolveSpeed } from "@/lib/drive/liveStats";
+import { mercatorX, mercatorY } from "@/lib/geo";
 import { type DistanceUnit, mpsToUnit } from "@/lib/units";
 
 export const speedPaletteIds = ["blue", "standard"] as const;
@@ -81,16 +82,6 @@ function smoothSpeeds(speeds: (number | null)[]): number[] {
   });
 }
 
-// line-progress は Web メルカトル座標での距離から求められるため、同じ投影で区間の長さを測る
-function mercatorX(lng: number): number {
-  return lng / 360 + 0.5;
-}
-
-function mercatorY(lat: number): number {
-  const sin = Math.sin((lat * Math.PI) / 180);
-  return 0.5 - (0.25 * Math.log((1 + sin) / (1 - sin))) / Math.PI;
-}
-
 // ルートを1本の線のまま速度帯ごとに塗り分ける（区間ごとに線を分けると、ズームアウト時に短い線が間引かれて途切れる）
 export function buildSpeedGradient(
   points: GpsPoint[],
@@ -105,6 +96,7 @@ export function buildSpeedGradient(
   const topSpeed = segmentSpeeds.reduce((max, speed) => Math.max(max, speed), 0);
   const thresholds = speedBandThresholds(scale, unit, topSpeed);
   const bands = segmentSpeeds.map((speed) => speedBand(speed, thresholds));
+  // line-progress は Web メルカトル座標での距離から求められるため、同じ投影で区間の長さを測る
   const lengths = accepted
     .slice(1)
     .map((point, index) =>

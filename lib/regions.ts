@@ -73,6 +73,16 @@ export async function findRegionAt(level: RegionLevel, point: CellCenter): Promi
   return { ...candidates[matchIndex], level, coordinates: geometries[matchIndex].coordinates };
 }
 
+export type RegionName = { id: string; name: string; nameEn: string };
+
+// 市区町村コード（N03）の上2桁が都道府県コードのため、境界データを読まずに索引だけで引く
+export async function prefectureOf(municipality: Region): Promise<RegionName | null> {
+  const index = await fetchBoundary<RegionIndex>("index.json");
+  const code = municipality.id.slice(0, 2);
+  const prefecture = index.prefecture.find(({ id }) => id === code);
+  return prefecture ? { id: prefecture.id, name: prefecture.name, nameEn: prefecture.nameEn } : null;
+}
+
 // 東京都の小笠原諸島のような離れた島まで含めると広すぎるため、点を含む陸地だけの範囲を返す
 export function regionPartBoundsAt(region: Region, point: CellCenter): Bounds | null {
   const part = region.coordinates.find((polygon) => polygonContains(polygon, point));

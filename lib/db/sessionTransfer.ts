@@ -118,7 +118,7 @@ export async function importSessionFile(file: File): Promise<ImportResult> {
   }
 }
 
-function formatFileDate(time: number): string {
+export function formatFileDate(time: number): string {
   const d = new Date(time);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`;

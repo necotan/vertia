@@ -97,7 +97,67 @@
         "confirmTitle": "Delete this session?",
         "confirmMessage": "All GPS and motion data will also be deleted. This cannot be undone.",
         "failed": "Could not delete the session"
+      },
+      "shareCard": {
+        "button": "Create share card"
       }
+    },
+    "share": {
+      "title": "Share Card",
+      "image": {
+        "change": "Change photo",
+        "failed": "Could not load the photo"
+      },
+      "items": {
+        "route": "Route",
+        "date": "Date",
+        "place": "Place",
+        "weather": "Weather",
+        "distance": "Distance",
+        "duration": "Duration",
+        "speed": "Speed",
+        "gForce": "G-force"
+      },
+      "blocks": {
+        "route": "Route",
+        "info": "Info"
+      },
+      "rows": {
+        "show": "Show",
+        "position": "Position",
+        "size": "Size"
+      },
+      "positions": {
+        "topLeft": "Top left",
+        "topRight": "Top right",
+        "bottomLeft": "Bottom left",
+        "bottomRight": "Bottom right"
+      },
+      "colors": {
+        "title": "Text color",
+        "white": "White",
+        "black": "Black"
+      },
+      "labels": {
+        "distance": "Distance",
+        "duration": "Time",
+        "avgSpeed": "Avg speed",
+        "maxSpeed": "Top speed",
+        "maxG": "Peak G",
+        "maxLateralG": "Lateral G",
+        "maxLongitudinalG": "Long. G"
+      },
+      "placeName": "{municipality}, {prefecture}",
+      "placeRoute": "{from} → {to}",
+      "placeRouteInPrefecture": "{from} → {to}, {prefecture}",
+      "weatherValue": "{condition} {temperature}{unit}",
+      "scaleValue": "{scale}x",
+      "actions": {
+        "share": "Share",
+        "preparing": "Preparing…"
+      },
+      "renderFailed": "Could not create the image",
+      "shareFailed": "Could not share the image"
     }
   },
   "home": {
