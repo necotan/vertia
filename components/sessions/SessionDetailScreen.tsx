@@ -1,10 +1,10 @@
 "use client";
 
 import { useLiveQuery } from "dexie-react-hooks";
-import { Share, Trash2 } from "lucide-react";
+import { ImagePlus, Share, Trash2 } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { BackLink } from "@/components/ui/BackLink";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { IconButton } from "@/components/ui/IconButton";
@@ -12,7 +12,9 @@ import { useToast } from "@/components/ui/Toast";
 import { db, type DriveSession, type SessionSummary, type SessionWeather } from "@/lib/db/schema";
 import { deleteSession, getSessionGpsPoints } from "@/lib/db/sessionRepository";
 import { exportSessionFile, isTransferSupported } from "@/lib/db/sessionTransfer";
+import { downloadBlob } from "@/lib/download";
 import { formatDuration } from "@/lib/format";
+import { setPendingShareImage } from "@/lib/shareCard/pendingImage";
 import {
   celsiusToUnit,
   metersToUnit,
@@ -135,19 +137,13 @@ export function SessionDetailScreen() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const shareImageInputRef = useRef<HTMLInputElement>(null);
 
   const handleExport = async () => {
     setExporting(true);
     try {
       const { blob, filename } = await exportSessionFile(id);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      document.body.append(link);
-      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      downloadBlob(blob, filename);
     } catch {
       toast.error(t("detail.export.failed"));
     } finally {
@@ -174,6 +170,31 @@ export function SessionDetailScreen() {
           <BackLink href="/sessions" label={tCommon("back")} />
           {session && (
             <div className="flex items-center gap-3">
+              {session.summary && (
+                <>
+                  {/* 写真の選択画面はタップの処理の中で開かないとブラウザに止められるため、遷移前のこの画面で開く */}
+                  <IconButton
+                    label={t("detail.shareCard.button")}
+                    onClick={() => shareImageInputRef.current?.click()}
+                    disabled={deleting}
+                  >
+                    <ImagePlus size={20} />
+                  </IconButton>
+                  <input
+                    ref={shareImageInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      event.target.value = "";
+                      if (!file) return;
+                      setPendingShareImage(id, file);
+                      router.push(`/sessions/share?id=${encodeURIComponent(id)}`);
+                    }}
+                  />
+                </>
+              )}
               {isTransferSupported() && (
                 <IconButton
                   label={exporting ? t("detail.export.exporting") : t("detail.export.button")}

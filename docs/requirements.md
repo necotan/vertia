@@ -17,6 +17,7 @@ This document is the source of truth for what Vertia does and why. Storage forma
 | Session file | `format: "vertia-session"` | The export file of one session (see `data-model.md` §2). |
 | Drive screen | `/drive`, `DriveScreen` | The screen used while driving (see 7.1). |
 | Session detail screen | `/sessions/detail`, `SessionDetailScreen` | The review screen of one session (see 7.2). |
+| Share card | `/sessions/share`, `ShareCardScreen` | An image made from a user's photo with the session's route and statistics drawn over it (see 7.7). |
 
 The term "drive log" is not used; use "session".
 
@@ -108,10 +109,11 @@ Feature detection (`lib/sensors/capabilities.ts`, `DriveController`):
 | `/drive` | Drive | 7.1 |
 | `/sessions` | Sessions | 7.4 |
 | `/sessions/detail?id=<sessionId>` | Session detail | 7.2 |
+| `/sessions/share?id=<sessionId>` | Share card | 7.7 |
 | `/map` | Map | 7.6 |
 | `/settings` | Settings | 7.5 |
 
-The bottom navigation (`nav.home`, `nav.sessions`, `nav.map`, `nav.settings`) is shown on every screen except `/drive` and `/map`.
+The bottom navigation (`nav.home`, `nav.sessions`, `nav.map`, `nav.settings`) is shown on every screen except `/drive`, `/map`, and `/sessions/share`.
 
 ### 7.1 Drive Screen
 
@@ -141,7 +143,8 @@ The bottom navigation (`nav.home`, `nav.sessions`, `nav.map`, `nav.settings`) is
 
 ### 7.2 Session Detail Screen
 
-- Header: back link, export button (`sessions.detail.export.button`), and delete button (`sessions.detail.delete.button`).
+- Header: back link, share card button (`sessions.detail.shareCard.button`), export button (`sessions.detail.export.button`), and delete button (`sessions.detail.delete.button`).
+  - The share card button is shown only when the session has a summary. It opens the OS photo picker directly (browsers open it only during a tap, so it is opened here, before navigating); after a photo is chosen, `/sessions/share?id=` opens with it.
   - The export button is hidden when the browser lacks `CompressionStream` / `DecompressionStream`.
   - Delete asks for confirmation (`sessions.detail.delete.confirmTitle`, `sessions.detail.delete.confirmMessage`). It removes the session and all of its GPS points and motion chunks in one transaction, then navigates to `/sessions`.
 - Title: the session's start date and time.
@@ -207,9 +210,38 @@ Shows every area the user has driven, as hexagonal H3 cells on a fullscreen map.
 - Map style: the same styles and saved choice as the session detail screen (7.2). Gestures are not cooperative (one finger moves the map).
 - When there are no target sessions, the empty state (`sessions.empty.*`) is shown with `sessions.empty.action`. When offline, `map.offline` is shown.
 
+### 7.7 Share Card Screen
+
+Makes an image for sharing a session: the user picks a photo, and the route and statistics are drawn over it.
+
+- Photo: chosen on the session detail screen (7.2) and kept in memory while navigating; `sessions.share.image.change` in the header picks another one. When the screen is opened without a photo (for example, after a reload), it returns to the session detail screen. The photo is drawn on a Canvas in the device, scaled down so its long edge is at most 2560 px; the output keeps the photo's aspect ratio. The photo and the output are never sent anywhere by the app and are not stored. Because the photo is redrawn, its metadata (including EXIF location) is not carried into the output.
+- Two blocks are drawn: the route, and the info (every other item). Sizes are proportional to the photo's short edge, so the preview and the output look the same. Each block has a size (`sessions.share.rows.size`) from 0.6 to 1.6 times its default size.
+- Controls: below the preview, the text color, then a segmented control that switches between the blocks (`sessions.share.blocks.*`). The route block has show/hide, position, and size; the info block has a checkbox per item, position, and size.
+- Info layout: the date and the weather on one small line, the place below it, then the statistics in rows of cells (label above value). Cells are placed in shared columns so the divider lines line up across rows.
+- When both blocks have the same corner, they are placed together, decided by the photo's shape: landscape (wider than tall) puts the route on the outer side and the info next to it; portrait or square puts the route above the info.
+- Otherwise, when the blocks would overlap, one is moved to the nearest position beside the other (above, below, left, or right) that stays inside the photo. The moved block is the one being dragged; when not dragging, a dragged block (free) is moved rather than one at a corner, and the info is moved when both are the same kind. When a drag ends, the moved position is saved. If no such position fits, they stay overlapped.
+- Items (`sessions.share.items.*`), each shown or hidden:
+
+  | Item | Default | Content |
+  |---|---|---|
+  | `route` | on | GPS points with accuracy of 50 m or better (same filter as the map route), drawn as a line. Start: filled dot; end: ring with a dot. Unavailable with fewer than 2 such points |
+  | `date` | on | Start date and time |
+  | `place` | on | Prefectures and municipalities of the first and last route points, found with the map screen's boundary data (7.6); the prefecture is taken from the first 2 digits of the municipality code. Formats: one place `sessions.share.placeName` (静岡県沼津市, Numazu, Shizuoka); two places in one prefecture `sessions.share.placeRouteInPrefecture` (the prefecture once); two prefectures `sessions.share.placeRoute` with each in `placeName`. Unavailable when neither is found or the boundaries cannot be loaded (outside Japan, or offline without a cached copy) |
+  | `weather` | off | Weather and temperature at the start (`sessions.share.weatherValue`), small, next to the date. Unavailable for sessions without weather |
+  | `distance`, `duration` | on | From the summary |
+  | `speed` | on | Average and max speed |
+  | `gForce` | off | Max, max lateral, and max longitudinal G, each labeled with G (`sessions.share.labels.*`) |
+
+  Unavailable items are disabled and not drawn. Units follow the distance unit setting (7.5).
+- Position (`sessions.share.positions.*`): for each block, top left, top right, bottom left, or bottom right. Dragging a block on the preview moves it freely (no corner is then selected); it stays inside the photo. The info is right-aligned on the right side (for a dragged block, when it is past the horizontal center); in that case each row's last cell is in the rightmost column.
+- Text color (`sessions.share.colors.*`): white or black. No shadow is drawn.
+- Output: JPEG, `vertia-YYYYMMDD-HHmm.jpg` (local start time). `sessions.share.actions.share` opens the Web Share sheet; where sharing files is unsupported (for example, on PC), it downloads the file. The output is rendered in advance after the options settle, because iOS rejects `navigator.share` that is not called right after a tap.
+- The options (items, positions, sizes, color) are saved per device (`data-model.md` §4).
+- When the session has no summary, `sessions.detail.noSummary` is shown; when the ID is unknown, `sessions.detail.notFound`.
+
 ## 8. Offline Behavior (Service Worker)
 
-- When the Service Worker is installed, all screens (home, drive, sessions, session detail, map, settings) and the build assets those screens load are saved.
+- When the Service Worker is installed, all screens (home, drive, sessions, session detail, share card, map, settings) and the build assets those screens load are saved.
 - The drive screen can measure and record offline.
 - The session detail screen is a single static page for all sessions (`/sessions/detail?id=<sessionId>`), so any session can be viewed offline.
 - Screens are fetched network-first. If there is no response within 3 seconds, the saved screen is shown (to avoid waiting when the signal is weak).
