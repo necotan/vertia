@@ -97,7 +97,7 @@ Import (`lib/db/sessionTransfer.ts`):
 | `vertia.routeSpeedColors` | `on`, `off` |
 | `vertia.speedPalette` | `blue`, `standard` |
 | `vertia.speedScale` | `relative`, `absolute` |
-| `vertia.shareCard` | JSON `{ "items": { "<item>": boolean }, "placements": { "route": Placement, "info": Placement }, "color": "#ffffff" \| "#000000" }`, where `Placement` is `{ "position": "topLeft" \| "topRight" \| "bottomLeft" \| "bottomRight" \| "free", "free": { "x": number, "y": number }, "scale": number }`: the share card options (`requirements.md` §7.7). `free` is the block position as a fraction (0–1) of the range it can move within; `scale` is the size relative to the default (0.6–1.6). Invalid or missing fields fall back to their defaults. The photo is not stored |
+| `vertia.shareCard` | JSON `{ "items": { "<item>": boolean }, "placements": { "route": Placement, "info": Placement }, "routeLabels": boolean, "color": "#ffffff" \| "#000000" }`, where `Placement` is `{ "position": "topLeft" \| "topRight" \| "bottomLeft" \| "bottomRight" \| "free", "free": { "x": number, "y": number }, "scale": number }`: the share card options (`requirements.md` §7.7). `free` is the block position as a fraction (0–1) of the range it can move within; `scale` is the size relative to the default (0.6–1.6). Invalid or missing fields fall back to their defaults. The photo is not stored |
 
 The theme is stored by next-themes with its default key. Settings are per device and are not included in session files.
 

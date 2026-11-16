@@ -126,7 +126,12 @@
         "show": "表示",
         "position": "位置",
         "size": "サイズ",
-        "place": "地名"
+        "place": "地名",
+        "routeLabels": "ラベルを表示"
+      },
+      "endpoints": {
+        "start": "START",
+        "end": "GOAL"
       },
       "placePlaceholder": "地名を入力",
       "placeReset": "自動に戻す",

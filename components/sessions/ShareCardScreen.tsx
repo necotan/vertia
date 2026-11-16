@@ -296,6 +296,8 @@ export function ShareCardScreen() {
 
     return {
       route: show("route") ? routePath : null,
+      routeLabels:
+        show("route") && options.routeLabels ? { start: t("endpoints.start"), end: t("endpoints.end") } : null,
       date: show("date") ? format.dateTime(session.startedAt, { dateStyle: "medium", timeStyle: "short" }) : null,
       weather:
         weather && show("weather")
@@ -311,7 +313,20 @@ export function ShareCardScreen() {
       place: show("place") && placeValue.trim() !== "" ? placeValue.trim() : null,
       rows,
     };
-  }, [session, summary, weather, options.items, routePath, placeValue, unit, format, t, tUnits, tWeather]);
+  }, [
+    session,
+    summary,
+    weather,
+    options.items,
+    options.routeLabels,
+    routePath,
+    placeValue,
+    unit,
+    format,
+    t,
+    tUnits,
+    tWeather,
+  ]);
 
   // Noto Sans JP は文字ごとに分割されたファイルのため、描く文字を渡して必要な分を読み込む
   const sampleText = content
@@ -319,6 +334,8 @@ export function ShareCardScreen() {
         content.date,
         content.weather,
         content.place,
+        content.routeLabels?.start,
+        content.routeLabels?.end,
         ...content.rows.flat().flatMap((cell) => [cell.label, cell.value, cell.unit]),
       ]
         .filter(Boolean)
@@ -560,19 +577,29 @@ export function ShareCardScreen() {
 
             <div>
               {tab === "route" ? (
-                <div className="flex items-center justify-between gap-3 py-3">
-                  <label htmlFor="share-card-route" className="text-sm font-bold">
-                    {t("rows.show")}
-                  </label>
-                  <Switch
-                    id="share-card-route"
-                    checked={blockShown.route}
-                    disabled={!available.route}
-                    onCheckedChange={(checked) =>
-                      updateOptions({ ...options, items: { ...options.items, route: checked } })
-                    }
-                  />
-                </div>
+                <>
+                  <div className="flex items-center justify-between gap-3 py-3">
+                    <label htmlFor="share-card-route" className="text-sm font-bold">
+                      {t("rows.show")}
+                    </label>
+                    <Switch
+                      id="share-card-route"
+                      checked={blockShown.route}
+                      disabled={!available.route}
+                      onCheckedChange={(checked) =>
+                        updateOptions({ ...options, items: { ...options.items, route: checked } })
+                      }
+                    />
+                  </div>
+                  <div className="py-1.5">
+                    <CheckItem
+                      label={t("rows.routeLabels")}
+                      checked={options.routeLabels && blockShown.route}
+                      disabled={!blockShown.route}
+                      onChange={() => updateOptions({ ...options, routeLabels: !options.routeLabels })}
+                    />
+                  </div>
+                </>
               ) : (
                 <>
                   <div className="grid grid-cols-2 gap-x-4 py-1.5 sm:grid-cols-3">

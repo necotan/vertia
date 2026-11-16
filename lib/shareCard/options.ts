@@ -21,6 +21,8 @@ export const SHARE_CARD_SCALE_MAX = 1.6;
 export type ShareCardOptions = {
   items: Record<ShareCardItem, boolean>;
   placements: Record<ShareCardBlock, ShareCardPlacement>;
+  // 経路の始点と終点に START / GOAL を添える
+  routeLabels: boolean;
   color: string;
 };
 
@@ -44,6 +46,7 @@ export const DEFAULT_SHARE_CARD_OPTIONS: ShareCardOptions = {
     route: { position: "bottomLeft", free: { x: 0, y: 1 }, scale: 1 },
     info: { position: "bottomLeft", free: { x: 0, y: 1 }, scale: 1 },
   },
+  routeLabels: true,
   color: SHARE_CARD_PRESET_COLORS[0].value,
 };
 
@@ -94,8 +97,9 @@ export function loadShareCardOptions(): ShareCardOptions {
     route: readPlacement(storedPlacements.route, defaults.placements.route),
     info: readPlacement(storedPlacements.info, defaults.placements.info),
   };
+  const routeLabels = typeof stored.routeLabels === "boolean" ? stored.routeLabels : defaults.routeLabels;
   const color = SHARE_CARD_PRESET_COLORS.find(({ value }) => value === stored.color)?.value ?? defaults.color;
-  return { items, placements, color };
+  return { items, placements, routeLabels, color };
 }
 
 export function saveShareCardOptions(options: ShareCardOptions): void {

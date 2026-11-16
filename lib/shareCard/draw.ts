@@ -1,12 +1,15 @@
-import { layoutShareCard, type ShareCardContent, type ShareCardLayout, type ShareCardOp } from "./layout";
+import {
+  layoutShareCard,
+  ROUTE_END_DOT_RADIUS as END_DOT_RADIUS,
+  ROUTE_END_RADIUS as END_RADIUS,
+  ROUTE_END_RING_WIDTH as END_RING_WIDTH,
+  ROUTE_LINE_WIDTH,
+  ROUTE_START_RADIUS as START_RADIUS,
+  type ShareCardContent,
+  type ShareCardLayout,
+  type ShareCardOp,
+} from "./layout";
 import type { ShareCardBlock, ShareCardOptions } from "./options";
-
-// 線と点の大きさは unit の倍数
-const ROUTE_LINE_WIDTH = 0.8;
-const START_RADIUS = 1.2;
-const END_RADIUS = 1.4;
-const END_RING_WIDTH = 0.5;
-const END_DOT_RADIUS = 0.5;
 
 function drawRoute(ctx: CanvasRenderingContext2D, op: Extract<ShareCardOp, { kind: "route" }>): void {
   const { path, rect, unit: u } = op;
