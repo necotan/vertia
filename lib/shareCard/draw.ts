@@ -14,6 +14,15 @@ function drawRoute(ctx: CanvasRenderingContext2D, op: Extract<ShareCardOp, { kin
   const toX = (x: number) => rect.x + x * scale;
   const toY = (y: number) => rect.y + y * scale;
 
+  const [startX, startY] = path.points[0];
+  const [endX, endY] = path.points[path.points.length - 1];
+
+  // 線がリングの内側に入らないよう、リングの円を除いた範囲だけに線を描く
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  ctx.arc(toX(endX), toY(endY), END_RADIUS * u, 0, Math.PI * 2);
+  ctx.clip("evenodd");
   ctx.lineWidth = ROUTE_LINE_WIDTH * u;
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
@@ -23,10 +32,9 @@ function drawRoute(ctx: CanvasRenderingContext2D, op: Extract<ShareCardOp, { kin
     else ctx.lineTo(toX(x), toY(y));
   });
   ctx.stroke();
+  ctx.restore();
 
   // 地図の表示と同じく、始点は塗りの点、終点はリングの中に点
-  const [startX, startY] = path.points[0];
-  const [endX, endY] = path.points[path.points.length - 1];
   ctx.beginPath();
   ctx.arc(toX(startX), toY(startY), START_RADIUS * u, 0, Math.PI * 2);
   ctx.fill();
