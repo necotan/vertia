@@ -126,7 +126,12 @@
         "show": "Show",
         "position": "Position",
         "size": "Size",
-        "place": "Place name"
+        "place": "Place name",
+        "routeLabels": "Show labels"
+      },
+      "endpoints": {
+        "start": "START",
+        "end": "GOAL"
       },
       "placePlaceholder": "Enter a place name",
       "placeReset": "Use detected name",

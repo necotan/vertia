@@ -7,6 +7,9 @@ export type ShareCardCell = { label: string; value: string; unit?: string };
 // 表示する項目だけを入れる（非表示の項目は null か空にする）
 export type ShareCardContent = {
   route: RoutePath | null;
+  // 経路の始点と終点に添える文字
+  // 添えないときは null
+  routeLabels: { start: string; end: string } | null;
   date: string | null;
   weather: string | null;
   place: string | null;
@@ -33,6 +36,15 @@ export type ShareCardLayout = {
 };
 
 // 以下の大きさは unit の倍数
+// 経路の線と始点・終点の印（draw.ts で描く）
+export const ROUTE_LINE_WIDTH = 0.8;
+export const ROUTE_START_RADIUS = 1.2;
+export const ROUTE_END_RADIUS = 1.4;
+export const ROUTE_END_RING_WIDTH = 0.5;
+export const ROUTE_END_DOT_RADIUS = 0.5;
+// START / GOAL の文字の大きさと、印の外周からの距離
+const ROUTE_LABEL_SIZE = 2;
+const ROUTE_LABEL_GAP = 0.8;
 const MARGIN = 6;
 const ROUTE_TEXT_GAP_LANDSCAPE = 5;
 const ROUTE_TEXT_GAP_PORTRAIT = 3.5;
@@ -201,7 +213,93 @@ function infoPiece(ctx: CanvasRenderingContext2D, content: ShareCardContent, u: 
   return { w, h: y, ops };
 }
 
-function routePiece(path: RoutePath, maxW: number, maxH: number, u: number): Piece {
+type Point = readonly [number, number];
+
+// 線分のうち矩形の中にある長さ（Liang–Barsky）
+function clippedLength([ax, ay]: Point, [bx, by]: Point, rect: Rect): number {
+  const dx = bx - ax;
+  const dy = by - ay;
+  let t0 = 0;
+  let t1 = 1;
+  const edges: [number, number][] = [
+    [-dx, ax - rect.x],
+    [dx, rect.x + rect.w - ax],
+    [-dy, ay - rect.y],
+    [dy, rect.y + rect.h - ay],
+  ];
+  for (const [p, q] of edges) {
+    if (p === 0) {
+      if (q < 0) return 0;
+    } else if (p < 0) {
+      t0 = Math.max(t0, q / p);
+    } else {
+      t1 = Math.min(t1, q / p);
+    }
+  }
+  return t1 > t0 ? (t1 - t0) * Math.hypot(dx, dy) : 0;
+}
+
+function rectsOverlap(a: Rect, b: Rect): boolean {
+  return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+}
+
+function expandRect(rect: Rect, by: number): Rect {
+  return { x: rect.x - by, y: rect.y - by, w: rect.w + by * 2, h: rect.h + by * 2 };
+}
+
+// 印から見たラベルの向き
+// 同じくらい線と重ならないときは前にあるものを選ぶ
+const ROUTE_LABEL_DIRECTIONS: readonly Point[] = [
+  [0, -1],
+  [0, 1],
+  [1, 0],
+  [-1, 0],
+  [1, -1],
+  [-1, -1],
+  [1, 1],
+  [-1, 1],
+];
+
+// 線や他の印・ラベルとの重なりがいちばん少ない向きに置く
+function placeRouteLabel(
+  [cx, cy]: Point,
+  w: number,
+  h: number,
+  distance: number,
+  segments: readonly (readonly [Point, Point])[],
+  obstacles: readonly Rect[],
+  clearance: number,
+): Rect {
+  let best: Rect | null = null;
+  let bestScore = Infinity;
+  for (const [dx, dy] of ROUTE_LABEL_DIRECTIONS) {
+    // 斜めは角が印から同じくらい離れるよう、少し近づける
+    const d = dx !== 0 && dy !== 0 ? distance * Math.SQRT1_2 : distance;
+    const rect = {
+      x: dx > 0 ? cx + d : dx < 0 ? cx - d - w : cx - w / 2,
+      y: dy > 0 ? cy + d : dy < 0 ? cy - d - h : cy - h / 2,
+      w,
+      h,
+    };
+    const area = expandRect(rect, clearance);
+    let score = obstacles.some((obstacle) => rectsOverlap(area, obstacle)) ? 1e9 : 0;
+    for (const [a, b] of segments) score += clippedLength(a, b, area);
+    if (score < bestScore) {
+      best = rect;
+      bestScore = score;
+    }
+  }
+  return best!;
+}
+
+function routePiece(
+  ctx: CanvasRenderingContext2D,
+  path: RoutePath,
+  labels: ShareCardContent["routeLabels"],
+  maxW: number,
+  maxH: number,
+  u: number,
+): Piece {
   const pad = ROUTE_PADDING * u;
   const innerMaxW = Math.max(maxW - pad * 2, 0);
   const innerMaxH = Math.max(maxH - pad * 2, 0);
@@ -212,7 +310,52 @@ function routePiece(path: RoutePath, maxW: number, maxH: number, u: number): Pie
   );
   const w = path.width * scale;
   const h = path.height * scale;
-  return { w: w + pad * 2, h: h + pad * 2, ops: [{ kind: "route", path, rect: { x: pad, y: pad, w, h }, unit: u }] };
+  const ops: ShareCardOp[] = [{ kind: "route", path, rect: { x: pad, y: pad, w, h }, unit: u }];
+  if (!labels) return { w: w + pad * 2, h: h + pad * 2, ops };
+
+  const points = path.points.map(([x, y]) => [pad + x * scale, pad + y * scale] as const);
+  const segments = points.slice(1).map((point, index) => [points[index], point] as const);
+  const start = points[0];
+  const end = points[points.length - 1];
+  const startRadius = ROUTE_START_RADIUS * u;
+  const endRadius = (ROUTE_END_RADIUS + ROUTE_END_RING_WIDTH / 2) * u;
+  const markerRect = ([x, y]: Point, r: number): Rect => ({ x: x - r, y: y - r, w: r * 2, h: r * 2 });
+  const startMarker = markerRect(start, startRadius);
+  const endMarker = markerRect(end, endRadius);
+  const font = labelFont(700, ROUTE_LABEL_SIZE * u);
+  const clearance = (ROUTE_LINE_WIDTH / 2 + ROUTE_LABEL_GAP / 2) * u;
+
+  let minX = 0;
+  let minY = 0;
+  let maxX = w + pad * 2;
+  let maxY = h + pad * 2;
+  // 自分の印は向きの候補が避けているため、相手の印と先に置いたラベルだけを避ける
+  const labelOf = (text: string, point: Point, radius: number, obstacles: readonly Rect[]): Rect => {
+    ctx.font = font;
+    const metrics = ctx.measureText(text);
+    // 文字の上下の余白を除いた高さで置き、印との距離を見た目どおりにする
+    const ascent = metrics.actualBoundingBoxAscent;
+    const rect = placeRouteLabel(
+      point,
+      metrics.width,
+      ascent + metrics.actualBoundingBoxDescent,
+      radius + ROUTE_LABEL_GAP * u,
+      segments,
+      obstacles,
+      clearance,
+    );
+    ops.push({ kind: "text", text, x: rect.x, y: rect.y + ascent, font, alpha: 1 });
+    minX = Math.min(minX, rect.x);
+    minY = Math.min(minY, rect.y);
+    maxX = Math.max(maxX, rect.x + rect.w);
+    maxY = Math.max(maxY, rect.y + rect.h);
+    return rect;
+  };
+  const startLabel = labelOf(labels.start, start, startRadius, [endMarker]);
+  labelOf(labels.end, end, endRadius, [startMarker, startLabel]);
+
+  // ラベルが経路の枠からはみ出した分だけブロックを広げる
+  return { w: maxX - minX, h: maxY - minY, ops: moveOps(ops, -minX, -minY) };
 }
 
 function isRightAligned(placement: ShareCardPlacement): boolean {
@@ -270,9 +413,10 @@ export function layoutShareCard(
   let route: Piece | null = null;
   if (content.route) {
     const routeU = u * routePlacement.scale;
-    route = landscape
-      ? routePiece(content.route, ROUTE_MAX_LANDSCAPE * routeU, ROUTE_MAX_LANDSCAPE * routeU, routeU)
-      : routePiece(content.route, ROUTE_MAX_WIDTH_PORTRAIT * routeU, ROUTE_MAX_HEIGHT_PORTRAIT * routeU, routeU);
+    const [maxW, maxH] = landscape
+      ? [ROUTE_MAX_LANDSCAPE, ROUTE_MAX_LANDSCAPE]
+      : [ROUTE_MAX_WIDTH_PORTRAIT, ROUTE_MAX_HEIGHT_PORTRAIT];
+    route = routePiece(ctx, content.route, content.routeLabels, maxW * routeU, maxH * routeU, routeU);
   }
 
   const ops: ShareCardOp[] = [];
