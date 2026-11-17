@@ -24,7 +24,7 @@ function perpendicularDistance(
   return Math.abs(dy * px - dx * py + bx * ay - by * ax) / length;
 }
 
-// Douglas–Peucker
+// Douglas-Peucker
 // 長い記録で再帰が深くならないよう、スタックで処理する
 function simplify(points: readonly (readonly [number, number])[], tolerance: number): (readonly [number, number])[] {
   if (points.length <= 2) return [...points];

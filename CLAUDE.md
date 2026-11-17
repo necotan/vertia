@@ -7,6 +7,12 @@
 - Write code comments in Japanese.
 - Use English for variable names, function names, file names, and translation keys.
 - Write `messages/ja.json` values in Japanese and `messages/en.json` values in English.
+- In docs, code comments, and commit messages, use ASCII instead of these symbols. This does not apply to UI text.
+  - Arrows: `->` `<-` `=>` `<=>` (not `→` `←` `⇒` `⇔`)
+  - Dashes and ellipsis: `-` (not `—` `–`), `...` (not `…`)
+  - Math: `x` (not `×`), `~` (not `≒`), `>=` `<=` (not `≥` `≤`)
+  - Quotes: `"` `'` (not `“ ”` `‘ ’`)
+  - Lists and marks: `1.` `2.` (not `①` `②`), `OK` / `NG` or words (not `✓` `✗` or emoji)
 
 ## Project
 
@@ -48,7 +54,7 @@ The specs are the source of truth for what to build; read the relevant section b
 
 ### Drive screen
 
-- MUST draw speed and G-force directly on the Canvas (`DriveRenderer`, `requestAnimationFrame`). NEVER route them through React state: GPS (~1 Hz) and motion (50–60 Hz) updates would re-render constantly. React receives only `DriveUiState`. ESLint rejects importing `react` in `lib/drive/`.
+- MUST draw speed and G-force directly on the Canvas (`DriveRenderer`, `requestAnimationFrame`). NEVER route them through React state: GPS (~1 Hz) and motion (50-60 Hz) updates would re-render constantly. React receives only `DriveUiState`. ESLint rejects importing `react` in `lib/drive/`.
 - The Canvas palette follows the app theme via `setDrivePalette` in `lib/drive/renderer/types.ts`.
 
 ### Data and network
