@@ -55,7 +55,7 @@ const municipalityOutput = await mapshaper.applyCommands(
     "-dissolve2 key copy-fields=prefecture,N03_001,N03_004,ward calc='minCode = min(code)'",
     `-filter-islands min-area=${MIN_ISLAND_M2} remove-empty`,
     `-simplify interval=${MUNICIPALITY_SIMPLIFY_M} keep-shapes`,
-    // 政令市のコードは区のコードの1の位を0にしたもの (例: 静岡市葵区 22101 → 静岡市 22100)
+    // 政令市のコードは区のコードの1の位を0にしたもの (例: 静岡市葵区 22101 -> 静岡市 22100)
     "-each 'id = ward ? String(Math.floor(minCode / 10) * 10).padStart(5, \"0\") : key'",
     `-o municipalities.json format=geojson precision=${PRECISION}`,
   ].join(" "),

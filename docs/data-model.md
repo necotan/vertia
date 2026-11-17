@@ -20,7 +20,7 @@ Dexie version history: 1 = initial stores; 2 = adds `weather` (existing sessions
 | Field | Type | Notes |
 |---|---|---|
 | `id` | `string` | `crypto.randomUUID()` |
-| `status` | `"recording" \| "completed" \| "interrupted"` | `recording` → `completed` on stop, or → `interrupted` on recovery (`requirements.md` §11.4) |
+| `status` | `"recording" \| "completed" \| "interrupted"` | `recording` -> `completed` on stop, or -> `interrupted` on recovery (`requirements.md` §11.4) |
 | `startedAt` | `number` | |
 | `endedAt` | `number \| null` | `null` while recording; for interrupted sessions, the last write time |
 | `updatedAt` | `number` | Last write time during recording |
@@ -31,7 +31,7 @@ Dexie version history: 1 = initial stores; 2 = adds `weather` (existing sessions
 
 `SessionSummary`: `distanceM`, `durationMs`, `maxSpeedMps`, `avgSpeedMps`, `medianSpeedMps`, `maxG`, `maxLateralG`, `maxLongitudinalG` (all `number`). Recomputed from stored data when recording stops or a session is recovered, so the whole session uses the final forward direction.
 
-`GpsPoint` (`gpsPoints`): `id?`, `sessionId`, `t` (position timestamp), `lat`, `lng`, `accuracy` (m), `altitude`, `altitudeAccuracy`, `speed` (m/s), `heading` — the last four are `number | null`.
+`GpsPoint` (`gpsPoints`): `id?`, `sessionId`, `t` (position timestamp), `lat`, `lng`, `accuracy` (m), `altitude`, `altitudeAccuracy`, `speed` (m/s), `heading`. The last four are `number | null`.
 
 `MotionChunk` (`motionChunks`): about one second of samples.
 
@@ -66,7 +66,7 @@ Changing how cells are computed needs no Dexie version: raise `CELL_ALGORITHM_VE
 | Field | Content |
 |---|---|
 | `format` | `"vertia-session"` |
-| `version` | `3` (written). Versions 1–3 are accepted on import. |
+| `version` | `3` (written). Versions 1-3 are accepted on import. |
 | `exportedAt` | Epoch ms |
 | `session` | `DriveSession` as stored |
 | `gpsPoints` | `GpsPoint` without `id` and `sessionId` |
@@ -97,7 +97,7 @@ Import (`lib/db/sessionTransfer.ts`):
 | `vertia.routeSpeedColors` | `on`, `off` |
 | `vertia.speedPalette` | `blue`, `standard` |
 | `vertia.speedScale` | `relative`, `absolute` |
-| `vertia.shareCard` | JSON `{ "items": { "<item>": boolean }, "placements": { "route": Placement, "info": Placement }, "routeLabels": boolean, "color": "#ffffff" \| "#000000" }`, where `Placement` is `{ "position": "topLeft" \| "topRight" \| "bottomLeft" \| "bottomRight" \| "free", "free": { "x": number, "y": number }, "scale": number }`: the share card options (`requirements.md` §7.7). `free` is the block position as a fraction (0–1) of the range it can move within; `scale` is the size relative to the default (0.6–1.6). Invalid or missing fields fall back to their defaults. The photo is not stored |
+| `vertia.shareCard` | JSON `{ "items": { "<item>": boolean }, "placements": { "route": Placement, "info": Placement }, "routeLabels": boolean, "color": "#ffffff" \| "#000000" }`, where `Placement` is `{ "position": "topLeft" \| "topRight" \| "bottomLeft" \| "bottomRight" \| "free", "free": { "x": number, "y": number }, "scale": number }`: the share card options (`requirements.md` §7.7). `free` is the block position as a fraction (0-1) of the range it can move within; `scale` is the size relative to the default (0.6-1.6). Invalid or missing fields fall back to their defaults. The photo is not stored |
 
 The theme is stored by next-themes with its default key. Settings are per device and are not included in session files.
 

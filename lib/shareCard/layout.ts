@@ -215,7 +215,7 @@ function infoPiece(ctx: CanvasRenderingContext2D, content: ShareCardContent, u: 
 
 type Point = readonly [number, number];
 
-// 線分のうち矩形の中にある長さ（Liang–Barsky）
+// 線分のうち矩形の中にある長さ（Liang-Barsky）
 function clippedLength([ax, ay]: Point, [bx, by]: Point, rect: Rect): number {
   const dx = bx - ax;
   const dy = by - ay;

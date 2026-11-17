@@ -33,7 +33,7 @@ Try it right away in your browser, no setup needed. Open the drive screen on a d
 ## Features
 The drive screen centers on a speed readout and a circular G meter, alongside average, median, and top speed and the GPS accuracy. Screen Wake Lock keeps the screen from sleeping while you drive.
 
-You start and stop recording manually. GPS is saved at the rate the device reports (about 1Hz), and acceleration and angular velocity at 50–60Hz without downsampling. If the app is closed during a recording, it recovers the next time you open it by recomputing the stats from the saved data.
+You start and stop recording manually. GPS is saved at the rate the device reports (about 1Hz), and acceleration and angular velocity at 50-60Hz without downsampling. If the app is closed during a recording, it recovers the next time you open it by recomputing the stats from the saved data.
 
 After a drive, each recording shows a map of the route and a chart of speed over time. Distance, duration, speed, and G stats appear on the same screen. You can export a recording as gzip-compressed JSON (`vertia-YYYYMMDD-HHmm.json.gz`) and import it on another device.
 
@@ -62,7 +62,7 @@ On a smartphone, adding the app to your home screen hides the address bar and ot
 ### Location Settings
 The drive screen uses your location. If speed or GPS accuracy doesn't display correctly, check the following settings.
 
-- **iOS**: In Settings → Privacy & Security → Location Services → Safari Websites, turn on "Precise Location"
+- **iOS**: In Settings -> Privacy & Security -> Location Services -> Safari Websites, turn on "Precise Location"
 - **Android**: In Chrome's location permission, turn on "Use precise location"
 
 ## Development

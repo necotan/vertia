@@ -69,7 +69,7 @@ Feature detection (`lib/sensors/capabilities.ts`, `DriveController`):
   - Reason: a standard global grid with stable cell IDs that can be cached per session, and it can merge cells into one outline (`cellsToMultiPolygon`). Runs locally; no network access.
 - **Municipality and prefecture boundaries (map screen), and the wards of designated cities (share card place only)**: National Land Numerical Information, Administrative Areas (N03, MLIT), simplified with mapshaper (dev dependency) by `scripts/generateBoundaries.mjs` into `public/boundaries/`. Each municipality also has its type (`kind`: city, town, village, ward) from the end of its name.
   - Reason: open data (CC BY 4.0) with polygons and official codes for every municipality. The OpenFreeMap tiles have boundary lines only, without areas or names. The raw data is about 600 MB, so it is simplified once at development time and served as static files.
-  - English names: N03 has no English names, so they come from Japan Post's romanized postal code data (`KEN_ALL_ROME.CSV`, freely distributable). The script keeps the name without its type (市, 町, 県, and so on), writes the syllabic n as "n" before b, m, and p (Gunma, not Gumma), drops the doubled long vowels that the data writes since its February 2026 edition (OO, OU → O, UU → U: Yubari, Chuo), and writes っch as "tch" (Kutchan). Names that the postal data lacks are set in the script.
+  - English names: N03 has no English names, so they come from Japan Post's romanized postal code data (`KEN_ALL_ROME.CSV`, freely distributable). The script keeps the name without its type (市, 町, 県, and so on), writes the syllabic n as "n" before b, m, and p (Gunma, not Gumma), drops the doubled long vowels that the data writes since its February 2026 edition (OO, OU -> O, UU -> U: Yubari, Chuo), and writes っch as "tch" (Kutchan). Names that the postal data lacks are set in the script.
 - **Charts**: Recharts (speed chart on the session detail screen, monthly distance chart on the home screen)
 - **Weather**: Open-Meteo
   - Reason: no API key and free for non-commercial use. Used to get the weather, temperature, and wind speed when recording starts.
@@ -93,7 +93,7 @@ Feature detection (`lib/sensors/capabilities.ts`, `DriveController`):
 ## 6. Sensor Recording
 
 - **GPS**: device native rate (effectively 1 Hz). `watchPosition` with `enableHighAccuracy: true`, `maximumAge: 0`, `timeout: 15000`.
-- **Accelerometer**: recorded at 50–60 Hz without decimation (to keep the precision needed for circuit driving analysis).
+- **Accelerometer**: recorded at 50-60 Hz without decimation (to keep the precision needed for circuit driving analysis).
   - Every `devicemotion` event is stored. The app does not enforce or verify the rate; the actual rate depends on the device (see 9).
   - Each sample stores `accelerationIncludingGravity`, and also `acceleration` and `rotationRate` (gyroscope) when the device provides them.
 - **Speed**: the speed reported by the device. Negative or non-finite values are treated as missing; when missing, speed is computed from the distance and time to the previous GPS point.
@@ -188,8 +188,8 @@ The bottom navigation (`nav.home`, `nav.sessions`, `nav.map`, `nav.settings`) is
 | Map speed colors (`settings.speedPalette`) | `blue`, `standard` | `blue` |
 | Speed color scale (`settings.speedScale`) | `relative` (the session's max speed is the darkest color), `absolute` (fixed thresholds) | `relative` |
 
-- The distance unit also switches the other units: `km` → km/h, °C, m/s for wind; `mi` → mph, °F, mph for wind. Values are stored in SI units and converted for display.
-- Absolute speed thresholds: `km` 20, 40, …, 180 km/h; `mi` 10, 20, 30, 40, 50, 60, 75, 90, 110 mph.
+- The distance unit also switches the other units: `km` -> km/h, °C, m/s for wind; `mi` -> mph, °F, mph for wind. Values are stored in SI units and converted for display.
+- Absolute speed thresholds: `km` 20, 40, ..., 180 km/h; `mi` 10, 20, 30, 40, 50, 60, 75, 90, 110 mph.
 
 ### 7.6 Map Screen
 
@@ -265,7 +265,7 @@ Implementation details (`public/sw.js`, `components/pwa/ServiceWorkerRegister.ts
 
 ## 10. Data Specification
 
-Moved to `docs/data-model.md`: 10.1 IndexedDB Schema → §1, 10.2 Session File → §2, 10.3 Weather Data → §3, 10.4 Local Settings → §4. The section number is kept so that references to 11 and later stay valid.
+Moved to `docs/data-model.md`: 10.1 IndexedDB Schema -> §1, 10.2 Session File -> §2, 10.3 Weather Data -> §3, 10.4 Local Settings -> §4. The section number is kept so that references to 11 and later stay valid.
 
 ## 11. Non-functional Requirements
 
