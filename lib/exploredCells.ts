@@ -4,9 +4,9 @@ import { getSessionGpsPoints } from "@/lib/db/sessionRepository";
 import { GPS_ACCURACY_LIMIT_M } from "@/lib/drive/liveStats";
 import { haversineMeters } from "@/lib/geo";
 
-// 辺 約0.46km (1Hz の点が高速道路の速度でもセルを飛ばさない)
+/** 辺 約0.46km (1Hz の点が高速道路の速度でもセルを飛ばさない) */
 export const CELL_RESOLUTION = 8;
-// 辺 約3.2km (縮小時に細かすぎる描画を避ける)
+/** 辺 約3.2km (縮小時に細かすぎる描画を避ける) */
 export const COARSE_CELL_RESOLUTION = 6;
 // 上げると保存済みのセルが作り直される
 const CELL_ALGORITHM_VERSION = 1;
@@ -15,7 +15,7 @@ const GAP_FILL_MAX_M = 5000;
 
 export type MultiPolygonCoordinates = number[][][][];
 
-// 記録中は点が増え続けるため、記録が終わったセッションだけ
+/** 記録中は点が増え続けるため、記録が終わったセッションだけ */
 export function hasCellTarget(session: DriveSession): boolean {
   return session.summary !== null;
 }

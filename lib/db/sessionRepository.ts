@@ -47,12 +47,12 @@ export async function setSessionWeather(sessionId: string, weather: SessionWeath
   await db.sessions.update(sessionId, { weather });
 }
 
-// 走行中に推定した前方を記録中に書き込み、中断時の復旧でも使えるようにする
+/** 走行中に推定した前方を記録中に書き込み、中断時の復旧でも使えるようにする */
 export async function setSessionCalibration(sessionId: string, calibration: SessionCalibration): Promise<void> {
   await db.sessions.update(sessionId, { calibration });
 }
 
-// 記録の途中で前方の推定が変わっても全区間を同じ向きで集計するよう、サマリーは保存済みのデータから計算し直す
+/** 記録の途中で前方の推定が変わっても全区間を同じ向きで集計するよう、サマリーは保存済みのデータから計算し直す */
 export async function completeSession(
   sessionId: string,
   startedAt: number,
@@ -93,7 +93,7 @@ export async function getSessionMotionChunks(sessionId: string): Promise<MotionC
     .toArray();
 }
 
-// アプリ終了等で recording のまま残ったセッションを interrupted にしてサマリーを作る
+/** アプリ終了等で recording のまま残ったセッションを interrupted にしてサマリーを作る */
 export async function recoverInterruptedSessions(now: number = Date.now()): Promise<number> {
   const stale = await db.sessions
     .where("status")

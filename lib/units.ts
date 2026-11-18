@@ -46,7 +46,7 @@ export function celsiusToUnit(celsius: number, unit: DistanceUnit): number {
   return unit === "mi" ? celsius * 1.8 + 32 : celsius;
 }
 
-// 風速は距離の単位が km のとき m/s のまま、mi のとき mph に換算する
+/** 風速は距離の単位が km のとき m/s のまま、mi のとき mph に換算する */
 export function windSpeedToUnit(mps: number, unit: DistanceUnit): number {
   return unit === "mi" ? mpsToUnit(mps, unit) : mps;
 }

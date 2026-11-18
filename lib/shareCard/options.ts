@@ -1,18 +1,20 @@
 export const shareCardItems = ["route", "date", "place", "weather", "distance", "duration", "speed", "gForce"] as const;
 export type ShareCardItem = (typeof shareCardItems)[number];
 
-// 経路と情報（経路以外の項目）は別々に配置できる
+/** 経路と情報（経路以外の項目）は別々に配置できる */
 export const shareCardBlocks = ["route", "info"] as const;
 export type ShareCardBlock = (typeof shareCardBlocks)[number];
 
 export const shareCardPositions = ["topLeft", "topRight", "bottomLeft", "bottomRight", "free"] as const;
 export type ShareCardPosition = (typeof shareCardPositions)[number];
 
-// 自由配置の位置
-// 動かせる範囲（余白の内側）に対する割合で持ち、画像の大きさが変わってもはみ出さないようにする
+/**
+ * 自由配置の位置
+ * 動かせる範囲（余白の内側）に対する割合で持ち、画像の大きさが変わってもはみ出さないようにする
+ */
 export type ShareCardFreePosition = { x: number; y: number };
 
-// scale は既定の大きさに対する倍率
+/** scale は既定の大きさに対する倍率 */
 export type ShareCardPlacement = { position: ShareCardPosition; free: ShareCardFreePosition; scale: number };
 
 export const SHARE_CARD_SCALE_MIN = 0.6;
@@ -21,7 +23,7 @@ export const SHARE_CARD_SCALE_MAX = 1.6;
 export type ShareCardOptions = {
   items: Record<ShareCardItem, boolean>;
   placements: Record<ShareCardBlock, ShareCardPlacement>;
-  // 経路の始点と終点に START / GOAL を添える
+  /** 経路の始点と終点に START / GOAL を添える */
   routeLabels: boolean;
   color: string;
 };
@@ -74,7 +76,7 @@ function readPlacement(value: unknown, fallback: ShareCardPlacement): ShareCardP
   };
 }
 
-// 壊れた値が保存されていても、読めた項目だけ使い残りは既定値にする
+/** 壊れた値が保存されていても、読めた項目だけ使い残りは既定値にする */
 export function loadShareCardOptions(): ShareCardOptions {
   const defaults = DEFAULT_SHARE_CARD_OPTIONS;
   let stored: unknown = null;

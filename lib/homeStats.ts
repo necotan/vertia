@@ -8,7 +8,7 @@ export interface MonthlyDistance {
 }
 
 export interface HomeStats {
-  // 古い月から順に並べ、最後が今月
+  /** 古い月から順に並べ、最後が今月 */
   monthly: MonthlyDistance[];
   totalM: number;
   count: number;
@@ -17,7 +17,7 @@ export interface HomeStats {
 
 type SummarizedSession = DriveSession & { summary: SessionSummary };
 
-// 月の区切りは端末のローカル時刻で決める
+/** 月の区切りは端末のローカル時刻で決める */
 export function computeHomeStats(sessions: DriveSession[], now: number): HomeStats | null {
   const summarized = sessions.filter((s): s is SummarizedSession => s.summary !== null);
   if (summarized.length === 0) return null;

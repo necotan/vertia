@@ -2,7 +2,7 @@ import type { GpsPoint } from "@/lib/db/schema";
 import { GPS_ACCURACY_LIMIT_M } from "@/lib/drive/liveStats";
 import { mercatorX, mercatorY } from "@/lib/geo";
 
-// 長辺を 1 とした経路の形。width と height はどちらも 1 以下
+/** 長辺を 1 とした経路の形。width と height はどちらも 1 以下 */
 export type RoutePath = {
   points: readonly (readonly [number, number])[];
   width: number;
@@ -51,7 +51,7 @@ function simplify(points: readonly (readonly [number, number])[], tolerance: num
   return points.filter((_, index) => keep[index] === 1);
 }
 
-// 地図の経路と同じく、精度の悪い点は除いてメルカトル投影する
+/** 地図の経路と同じく、精度の悪い点は除いてメルカトル投影する */
 export function buildRoutePath(gpsPoints: GpsPoint[]): RoutePath | null {
   const accepted = gpsPoints.filter((p) => p.accuracy <= GPS_ACCURACY_LIMIT_M);
   if (accepted.length < 2) return null;

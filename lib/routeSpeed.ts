@@ -46,7 +46,7 @@ const SPEED_BAND_COUNT = SPEED_BAND_THRESHOLDS.km.length + 1;
 // 停車しているだけの記録で、わずかな揺らぎまで濃い色に引き伸ばさないための下限
 const MIN_RELATIVE_TOP_SPEED = 1;
 
-// 相対では記録内の最高速度を一番濃い色とし、その比率で塗り分ける
+/** 相対では記録内の最高速度を一番濃い色とし、その比率で塗り分ける */
 export function speedBandThresholds(scale: SpeedScaleId, unit: DistanceUnit, topSpeed: number): readonly number[] {
   if (scale === "absolute") return SPEED_BAND_THRESHOLDS[unit];
   const top = Math.max(topSpeed, MIN_RELATIVE_TOP_SPEED);
@@ -62,7 +62,7 @@ export function speedBandBoundary(thresholds: readonly number[], index: number):
 // GPS の揺らぎで境目の色が細かく入れ替わらないよう、前後の点と平均する
 const SMOOTHING_RADIUS = 1;
 
-// MapLibre の line-gradient に渡す、線の始点からの割合で色を切り替える式
+/** MapLibre の line-gradient に渡す、線の始点からの割合で色を切り替える式 */
 export type SpeedGradient = ["step", ["line-progress"], string, ...(number | string)[]];
 export type SpeedRoute = { gradient: SpeedGradient; thresholds: readonly number[] };
 
@@ -82,7 +82,7 @@ function smoothSpeeds(speeds: (number | null)[]): number[] {
   });
 }
 
-// ルートを1本の線のまま速度帯ごとに塗り分ける（区間ごとに線を分けると、ズームアウト時に短い線が間引かれて途切れる）
+/** ルートを1本の線のまま速度帯ごとに塗り分ける（区間ごとに線を分けると、ズームアウト時に短い線が間引かれて途切れる） */
 export function buildSpeedGradient(
   points: GpsPoint[],
   unit: DistanceUnit,

@@ -1,7 +1,7 @@
 import type { GForce } from "../gForce";
 import type { GTrailPoint } from "../gTrail";
 
-// DriveController が保持し、描画ループが毎フレーム参照する
+/** DriveController が保持し、描画ループが毎フレーム参照する */
 export interface DriveFrame {
   speedMps: number | null;
   gpsAccuracyM: number | null;
@@ -74,7 +74,7 @@ const LIGHT_PALETTE: DrivePalette = {
   recording: "#dc2626",
 };
 
-// 描画関数が参照する配色（描画ループは毎フレーム描き直すので、setDrivePalette で差し替えるとすぐ反映される）
+/** 描画関数が参照する配色（描画ループは毎フレーム描き直すので、setDrivePalette で差し替えるとすぐ反映される） */
 export const COLORS: DrivePalette = { ...DARK_PALETTE };
 
 export function setDrivePalette(theme: "light" | "dark"): void {
@@ -87,8 +87,10 @@ const NUMBER_FONT_FALLBACK = 'ui-monospace, Menlo, Consolas, "Roboto Mono", mono
 export let LABEL_FONT = LABEL_FONT_FALLBACK;
 export let NUMBER_FONT = NUMBER_FONT_FALLBACK;
 
-// next/font が <html> に定義したフォント名を取得し、Canvas で使えるよう読み込む
-// sampleText は Noto Sans JP の分割ファイルのうち必要な文字を含むものを読み込むために渡す
+/**
+ * next/font が <html> に定義したフォント名を取得し、Canvas で使えるよう読み込む
+ * sampleText は Noto Sans JP の分割ファイルのうち必要な文字を含むものを読み込むために渡す
+ */
 export async function loadCanvasFonts(sampleText: string): Promise<void> {
   const root = getComputedStyle(document.documentElement);
   const geistSans = root.getPropertyValue("--font-geist-sans").trim();

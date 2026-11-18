@@ -7,7 +7,7 @@ const RING_STEP_G = 0.5;
 const TRAIL_DOT_INTERVAL_MS = 75;
 const TRAIL_MAX_OPACITY = 0.75;
 
-// ドットは車内の物体が受ける慣性力の向きに動く（減速で上、加速で下、右旋回で左）
+/** ドットは車内の物体が受ける慣性力の向きに動く（減速で上、加速で下、右旋回で左） */
 export function drawGMeter(
   ctx: CanvasRenderingContext2D,
   circle: Circle,

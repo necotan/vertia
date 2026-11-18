@@ -4,11 +4,13 @@ import type { RoutePath } from "./route";
 
 export type ShareCardCell = { label: string; value: string; unit?: string };
 
-// 表示する項目だけを入れる（非表示の項目は null か空にする）
+/** 表示する項目だけを入れる（非表示の項目は null か空にする） */
 export type ShareCardContent = {
   route: RoutePath | null;
-  // 経路の始点と終点に添える文字
-  // 添えないときは null
+  /**
+   * 経路の始点と終点に添える文字
+   * 添えないときは null
+   */
   routeLabels: { start: string; end: string } | null;
   date: string | null;
   weather: string | null;
@@ -25,12 +27,16 @@ export type ShareCardOp =
   | { kind: "route"; path: RoutePath; rect: Rect; unit: number };
 
 export type ShareCardLayout = {
-  // ドラッグの当たり判定に使う
-  // 表示しないブロックは含まない
+  /**
+   * ドラッグの当たり判定に使う
+   * 表示しないブロックは含まない
+   */
   rects: Partial<Record<ShareCardBlock, Rect>>;
   ops: ShareCardOp[];
-  // 画像の短辺の 1/100
-  // 文字や線の太さはすべてこの倍数にして、プレビューと書き出しで見た目を揃える
+  /**
+   * 画像の短辺の 1/100
+   * 文字や線の太さはすべてこの倍数にして、プレビューと書き出しで見た目を揃える
+   */
   unit: number;
   margin: number;
 };
@@ -499,7 +505,7 @@ function avoidOverlap(
   return candidates.reduce((best, candidate) => (distance(candidate) < distance(best) ? candidate : best));
 }
 
-// 大きさ size のブロックの左上を (x, y) に動かしたときの自由配置の位置
+/** 大きさ size のブロックの左上を (x, y) に動かしたときの自由配置の位置 */
 export function freePositionAt(
   layout: ShareCardLayout,
   size: { w: number; h: number },

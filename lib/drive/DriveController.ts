@@ -41,7 +41,7 @@ const CALIBRATION_MIN_SAMPLES = 20;
 // この時間GPSの更新がなければ速度表示を無効にする
 const GPS_STALE_MS = 5000;
 
-// 高頻度の値は frame に保持し、React には粗い状態変化だけを通知する
+/** 高頻度の値は frame に保持し、React には粗い状態変化だけを通知する */
 export class DriveController {
   private ui: DriveUiState = initialDriveUiState;
   private readonly gTrail = new GTrail();

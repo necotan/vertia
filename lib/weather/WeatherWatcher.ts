@@ -6,7 +6,7 @@ const REFRESH_INTERVAL_MS = 15 * 60 * 1000;
 const REFRESH_DISTANCE_M = 10_000;
 const RETRY_INTERVAL_MS = 60 * 1000;
 
-// GPS の測位ごとに呼ばれ、必要なときだけ天気を取りに行く
+/** GPS の測位ごとに呼ばれ、必要なときだけ天気を取りに行く */
 export class WeatherWatcher {
   private latest: SessionWeather | null = null;
   private nextFetchAt = 0;

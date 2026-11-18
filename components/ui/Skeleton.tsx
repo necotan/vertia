@@ -16,7 +16,7 @@ const TEXT_SIZE_CLASS: Record<SkeletonTextSize, string> = {
   "2xl": "text-2xl",
 };
 
-// 文字1行分のプレースホルダ（実要素と同じ text-* を当てて高さをフォントサイズと行間に追従させる）
+/** 文字1行分のプレースホルダ（実要素と同じ text-* を当てて高さをフォントサイズと行間に追従させる） */
 export function SkeletonText({
   size,
   className,

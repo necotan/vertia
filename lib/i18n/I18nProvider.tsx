@@ -22,7 +22,7 @@ type Props = {
   fallback?: ReactNode;
 };
 
-// 言語設定は localStorage にあるため、静的HTMLには文言を含めずクライアントで確定してから描画する
+/** 言語設定は localStorage にあるため、静的HTMLには文言を含めずクライアントで確定してから描画する */
 export function I18nProvider({ children, fallback = null }: Props) {
   const locale = useSyncExternalStore(subscribe, detectLocale, getServerSnapshot);
 

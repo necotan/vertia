@@ -8,7 +8,7 @@ type SegmentedToggleOption<T extends string> = {
   icon?: ReactNode;
 };
 
-// value がどの選択肢にも当たらないとき（シェアカードの自由配置など）は、どれも選ばれていない表示にする
+/** value がどの選択肢にも当たらないとき（シェアカードの自由配置など）は、どれも選ばれていない表示にする */
 export function SegmentedToggle<T extends string>({
   value,
   options,

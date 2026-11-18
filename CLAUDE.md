@@ -84,6 +84,7 @@ The specs are the source of truth for what to build; read the relevant section b
 - Write only why: the reason for a choice, workarounds for browser or library quirks (iOS Safari, MapLibre, Dexie, etc.), and constraints the code alone does not show.
 - Do not write what the code, names, or JSX already say (e.g. "ハンバーガーメニュー", "保存ボタン", "〜の処理"). If there is no why to explain, write no comment.
 - No decorative characters such as `---`, `===`, `***`.
+- Use `/** */` above an exported function, hook, class, type, constant, or a type or props field when callers must know something to use it correctly: rules they must follow (e.g. call `requestMotionPermission` before any other `await`), what the value means, or side effects. VS Code shows it on hover at call sites. Put implementation reasons in `//` inside the function, next to the code they explain. Use `//` for all other comments.
 
 ## Git workflow
 

@@ -112,7 +112,7 @@ function MonthlyChart({ monthly }: { monthly: MonthlyDistance[] | null }) {
   );
 }
 
-// stats が null のときは読み込み中として、同じ配置のスケルトンを出す
+/** stats が null のときは読み込み中として、同じ配置のスケルトンを出す */
 export function HomeStats({ stats }: { stats: HomeStatsData | null }) {
   const t = useTranslations("home.stats");
   const tUnits = useTranslations("units");

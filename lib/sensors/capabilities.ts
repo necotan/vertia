@@ -22,7 +22,7 @@ export function detectDriveCapabilities(): DriveCapabilities {
   };
 }
 
-// API の有無による静的な判定（デスクトップ Chrome は DeviceMotionEvent を持つが値が届かないため、最終判定は走行画面でのセンサー値の受信確認（waitForMotionData）で行う）
+/** API の有無による静的な判定（デスクトップ Chrome は DeviceMotionEvent を持つが値が届かないため、最終判定は走行画面でのセンサー値の受信確認（waitForMotionData）で行う） */
 export function isDriveSupported(capabilities: DriveCapabilities): boolean {
   return capabilities.secureContext && capabilities.geolocation && capabilities.deviceMotion;
 }

@@ -9,7 +9,7 @@ import { computeLayout, type DriveLayout } from "./layout";
 export type { DriveLayout } from "./layout";
 import { COLORS, loadCanvasFonts, type DriveFrame, type DriveLabels } from "./types";
 
-// React の再レンダリングを介さず、requestAnimationFrame で Canvas に直接描画する
+/** React の再レンダリングを介さず、requestAnimationFrame で Canvas に直接描画する */
 export class DriveRenderer {
   private ctx: CanvasRenderingContext2D;
   private rafId: number | null = null;

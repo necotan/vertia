@@ -9,7 +9,7 @@ export function roundCoord(value: number): number {
   return Math.round(value * scale) / scale;
 }
 
-// 失敗時は例外を投げず null を返す
+/** 失敗時は例外を投げず null を返す */
 export async function fetchCurrentWeather(
   lat: number,
   lng: number,

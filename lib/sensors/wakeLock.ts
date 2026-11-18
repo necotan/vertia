@@ -1,6 +1,6 @@
 export type WakeLockStatus = "idle" | "active" | "unsupported" | "failed";
 
-// 画面スリープ防止（バックグラウンドから戻ると自動解除されるため再取得する）
+/** 画面スリープ防止（バックグラウンドから戻ると自動解除されるため再取得する） */
 export class WakeLockKeeper {
   private sentinel: WakeLockSentinel | null = null;
   private wanted = false;

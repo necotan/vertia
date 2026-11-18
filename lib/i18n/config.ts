@@ -54,7 +54,7 @@ function toInlineScriptLiteral(value: unknown): string {
   return JSON.stringify(value).replace(/[<>/\u2028\u2029]/g, (char) => INLINE_SCRIPT_ESCAPES[char]);
 }
 
-// 描画前に <html lang> を設定するためのインラインスクリプト
+/** 描画前に <html lang> を設定するためのインラインスクリプト */
 export const localeInitScript = `(function(){try{var s=localStorage.getItem(${toInlineScriptLiteral(
   LOCALE_STORAGE_KEY,
 )});var l=${toInlineScriptLiteral(locales)};var v=l.indexOf(s)>=0?s:null;if(!v){var n=(navigator.languages&&navigator.languages.length?navigator.languages:[navigator.language]);for(var i=0;i<n.length;i++){var b=String(n[i]).toLowerCase().split("-")[0];if(l.indexOf(b)>=0){v=b;break;}}}document.documentElement.lang=v||${toInlineScriptLiteral(

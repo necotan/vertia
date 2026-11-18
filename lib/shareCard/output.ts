@@ -17,7 +17,7 @@ export function previewSize(image: HTMLCanvasElement): { width: number; height: 
   return fitSize(image.width, image.height, PREVIEW_MAX_EDGE);
 }
 
-// EXIF の向きは img の読み込み時にブラウザが適用する。Canvas に描き直すため、写真の位置情報などのメタデータは書き出しに残らない
+/** EXIF の向きは img の読み込み時にブラウザが適用する。Canvas に描き直すため、写真の位置情報などのメタデータは書き出しに残らない */
 export async function loadShareImage(file: File): Promise<HTMLCanvasElement> {
   const url = URL.createObjectURL(file);
   try {

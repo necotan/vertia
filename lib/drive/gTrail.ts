@@ -8,7 +8,7 @@ export interface GTrailPoint {
 }
 
 export class GTrail {
-  // 描画側が参照を保持し続けられるよう、配列は差し替えずにその場で更新する
+  /** 描画側が参照を保持し続けられるよう、配列は差し替えずにその場で更新する */
   readonly points: GTrailPoint[] = [];
 
   add(g: GForce, t: number): void {

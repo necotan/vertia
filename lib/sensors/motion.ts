@@ -17,7 +17,7 @@ type DeviceMotionEventConstructor = typeof DeviceMotionEvent & {
   requestPermission?: () => Promise<"granted" | "denied">;
 };
 
-// iOS はユーザー操作の同期処理内で requestPermission を呼ぶ必要があるため、タップハンドラの先頭で他の await より前に呼び出すこと
+/** iOS はユーザー操作の同期処理内で requestPermission を呼ぶ必要があるため、タップハンドラの先頭で他の await より前に呼び出すこと */
 export function requestMotionPermission(): Promise<MotionPermissionResult> {
   if (typeof DeviceMotionEvent === "undefined") return Promise.resolve("unsupported");
   const ctor = DeviceMotionEvent as DeviceMotionEventConstructor;
@@ -56,7 +56,7 @@ export function subscribeMotion(onSample: (sample: MotionSample) => void): () =>
   return () => window.removeEventListener("devicemotion", handler);
 }
 
-// 値の入ったイベントが実際に届くかを確認する
+/** 値の入ったイベントが実際に届くかを確認する */
 export function waitForMotionData(timeoutMs: number): Promise<boolean> {
   return new Promise((resolve) => {
     let unsubscribe: () => void = () => {};

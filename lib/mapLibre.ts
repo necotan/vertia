@@ -12,7 +12,7 @@ export async function loadMapLibre(): Promise<typeof import("maplibre-gl")> {
   return maplibre;
 }
 
-// OpenFreeMap の dark スタイルが sprite にない画像（wood-pattern）を参照して警告が出るため、透明な画像で埋める
+/** OpenFreeMap の dark スタイルが sprite にない画像（wood-pattern）を参照して警告が出るため、透明な画像で埋める */
 export function fillMissingStyleImages(map: MapLibreMap): void {
   map.setMissingStyleImageResolver((id) => {
     if (!map.hasImage(id)) map.addImage(id, { width: 1, height: 1, data: new Uint8Array(4) });
@@ -102,7 +102,7 @@ export function collapseAttribution(container: HTMLElement): void {
   if (attribution) toggleAttribution(attribution, false);
 }
 
-// 開閉ボタンのタップを横取りしてアニメーションさせ、文字や地図の大きさが変わったら幅を合わせ直す
+/** 開閉ボタンのタップを横取りしてアニメーションさせ、文字や地図の大きさが変わったら幅を合わせ直す */
 export function setupAttribution(container: HTMLElement): () => void {
   const handleClick = (event: MouseEvent) => {
     if (!(event.target instanceof Element)) return;
@@ -143,7 +143,7 @@ export function useOnline(): boolean {
   return useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
 }
 
-// Safari は画面上部のぼかしをページの背景色で色づけるため
+/** Safari は画面上部のぼかしをページの背景色で色づけるため */
 export function useMapPageBackground(color: string | null): void {
   useEffect(() => {
     if (color === null) return;

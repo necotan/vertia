@@ -3,9 +3,9 @@ import { haversineMeters } from "@/lib/geo";
 import type { GeoFix } from "@/lib/sensors/geolocation";
 import { createCalibration, GForceLowPass, toGForce, type GForce } from "./gForce";
 
-// この精度より悪いGPS点は統計に使用しない
+/** この精度より悪いGPS点は統計に使用しない */
 export const GPS_ACCURACY_LIMIT_M = 50;
-// 中央値速度はこの速度以上の点のみを対象にする
+/** 中央値速度はこの速度以上の点のみを対象にする */
 export const MEDIAN_MIN_SPEED_MPS = 5 / 3.6;
 // 停車中のGPSの揺らぎで距離が増えないようにするための閾値
 const STATIONARY_SPEED_MPS = 0.5;
@@ -13,7 +13,7 @@ export const G_DISPLAY_TIME_CONSTANT_MS = 150;
 
 type SpeedFix = Pick<GeoFix, "t" | "lat" | "lng" | "speed">;
 
-// 端末の速度が得られない場合は前回の点との距離と時間から求める
+/** 端末の速度が得られない場合は前回の点との距離と時間から求める */
 export function resolveSpeed(previous: SpeedFix | null, fix: SpeedFix): number | null {
   if (fix.speed !== null) return fix.speed;
   if (!previous) return null;
@@ -116,7 +116,7 @@ function median(sorted: number[]): number | null {
   return sorted.length % 2 === 1 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
-// 最大Gは記録中と同じく表示用ローパス後の値で求める
+/** 最大Gは記録中と同じく表示用ローパス後の値で求める */
 export function computeSummaryFromData(
   startedAt: number,
   endedAt: number,

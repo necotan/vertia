@@ -15,23 +15,23 @@ export interface SessionSummary {
   maxLongitudinalG: number;
 }
 
-// 記録開始時点の天気（換算は表示時に行うため、値は SI 単位のまま保存する）
+/** 記録開始時点の天気（換算は表示時に行うため、値は SI 単位のまま保存する） */
 export interface SessionWeather {
-  // API が返した観測時刻
+  /** API が返した観測時刻 */
   observedAt: number;
-  // WMO weather code
+  /** WMO weather code */
   weatherCode: number;
   temperatureC: number;
   windSpeedMps: number;
-  // 取得に使用した座標
+  /** 取得に使用した座標 */
   lat: number;
   lng: number;
 }
 
 export interface SessionCalibration {
-  // 停車中に平均した accelerationIncludingGravity（端末座標系、m/s²）
+  /** 停車中に平均した accelerationIncludingGravity（端末座標系、m/s²） */
   gravity: Vec3;
-  // 走行中に推定した車両の前方（端末座標系の単位ベクトル）。推定前と、推定に対応する前の記録は null
+  /** 走行中に推定した車両の前方（端末座標系の単位ベクトル）。推定前と、推定に対応する前の記録は null */
   forward: Vec3 | null;
 }
 
@@ -40,11 +40,11 @@ export interface DriveSession {
   status: SessionStatus;
   startedAt: number;
   endedAt: number | null;
-  // 記録中に最後に書き込んだ時刻 (中断セッションの終了時刻の推定に使う)
+  /** 記録中に最後に書き込んだ時刻 (中断セッションの終了時刻の推定に使う) */
   updatedAt: number;
   calibration: SessionCalibration;
   summary: SessionSummary | null;
-  // 取得できなかった場合と、天気の保存に対応する前の記録は null
+  /** 取得できなかった場合と、天気の保存に対応する前の記録は null */
   weather: SessionWeather | null;
   schemaVersion: number;
 }
@@ -62,7 +62,7 @@ export interface GpsPoint {
   heading: number | null;
 }
 
-// 50〜60Hz のモーションデータを約1秒ごとにまとめて保存する
+/** 50〜60Hz のモーションデータを約1秒ごとにまとめて保存する */
 export interface MotionChunk {
   id?: number;
   sessionId: string;
@@ -80,11 +80,11 @@ export interface MotionChunk {
   rg: Float32Array | null;
 }
 
-// GPS 点から作り直せるキャッシュのため、セッションファイルには含めない
+/** GPS 点から作り直せるキャッシュのため、セッションファイルには含めない */
 export interface SessionCells {
   sessionId: string;
   resolution: number;
-  // 計算方法を変えたときに古いキャッシュを見分ける
+  /** 計算方法を変えたときに古いキャッシュを見分ける */
   algorithmVersion: number;
   cells: string[];
 }

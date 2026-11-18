@@ -42,7 +42,7 @@ export function DialogFooter({ className = "", ...props }: ComponentProps<"div">
   return <div className={`mt-6 grid auto-cols-fr grid-flow-col gap-2 ${className}`} {...props} />;
 }
 
-// destructive は削除など取り消せない操作に使う
+/** destructive は削除など取り消せない操作に使う */
 export function DialogActionButton({
   className = "",
   variant = "primary",

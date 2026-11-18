@@ -10,7 +10,7 @@ type Options = {
   minVisibleMs?: number;
 };
 
-// 短い読み込みでは表示せず、表示した場合は最短時間が経つまでデータ表示に切り替えない
+/** 短い読み込みでは表示せず、表示した場合は最短時間が経つまでデータ表示に切り替えない */
 export function useDeferredLoading(loading: boolean, options: Options = {}): boolean {
   const { showDelayMs = DEFAULT_SHOW_DELAY_MS, minVisibleMs = DEFAULT_MIN_VISIBLE_MS } = options;
   const [visible, setVisible] = useState(false);

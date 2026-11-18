@@ -13,11 +13,11 @@ type RegionEntry = {
   id: string;
   name: string;
   nameEn: string;
-  // 市区町村だけにある
+  /** 市区町村だけにある */
   kind?: MunicipalityKind;
   bbox: Bounds;
   cellCount: number;
-  // 範囲内にセルの中心が1つもない小さな島では null
+  /** 範囲内にセルの中心が1つもない小さな島では null */
   labelPoint: [number, number] | null;
 };
 type WardEntry = { id: string; name: string; nameEn: string; bbox: Bounds };
@@ -89,11 +89,11 @@ export async function prefectureOf(municipality: Region): Promise<RegionName | n
   return prefecture ? { id: prefecture.id, name: prefecture.name, nameEn: prefecture.nameEn } : null;
 }
 
-// 政令市の区
-// 区のコードの1の位を0にしたものが市のコードのため、その市の区だけを調べる
+/** 政令市の区 */
 export async function findWardAt(municipality: Region, point: CellCenter): Promise<RegionName | null> {
   const index = await fetchBoundary<RegionIndex>("index.json");
   const cityCode = Number(municipality.id);
+  // 区のコードの1の位を0にしたものが市のコードのため、その市の区だけを調べる
   const candidates = (index.ward ?? []).filter(
     ({ id, bbox }) => Math.floor(Number(id) / 10) * 10 === cityCode && boundsContain(bbox, point),
   );
@@ -103,7 +103,7 @@ export async function findWardAt(municipality: Region, point: CellCenter): Promi
   return match ? { id: match.id, name: match.name, nameEn: match.nameEn } : null;
 }
 
-// 東京都の小笠原諸島のような離れた島まで含めると広すぎるため、点を含む陸地だけの範囲を返す
+/** 東京都の小笠原諸島のような離れた島まで含めると広すぎるため、点を含む陸地だけの範囲を返す */
 export function regionPartBoundsAt(region: Region, point: CellCenter): Bounds | null {
   const part = region.coordinates.find((polygon) => polygonContains(polygon, point));
   if (!part) return null;
@@ -127,7 +127,7 @@ export function toCellCenters(cells: string[]): CellCenter[] {
   });
 }
 
-// 生成時のセル数と同じく、中心が範囲内にあるセルを数える
+/** 生成時のセル数と同じく、中心が範囲内にあるセルを数える */
 export function countCellsInRegion(region: Region, centers: CellCenter[]): number {
   return centers.filter(
     (center) => boundsContain(region.bbox, center) && multiPolygonContains(region.coordinates, center),

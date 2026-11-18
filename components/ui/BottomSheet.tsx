@@ -11,7 +11,7 @@ type Props = {
   children: ReactNode;
 };
 
-// iOS のホーム画面アプリでは fixed や dialog の位置がずれるため、position: relative などを持つ親の中に absolute で重ねる
+/** iOS のホーム画面アプリでは fixed や dialog の位置がずれるため、position: relative などを持つ親の中に absolute で重ねる */
 export function BottomSheet({ open, title, closeLabel, onClose, children }: Props) {
   return (
     <>

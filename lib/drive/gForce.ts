@@ -2,7 +2,7 @@ import type { Vec3 } from "@/lib/db/schema";
 
 export const STANDARD_GRAVITY = 9.80665;
 
-// 端末座標系（x=右、y=上、z=画面手前）で表した車両の上、前、右方向の単位ベクトル
+/** 端末座標系（x=右、y=上、z=画面手前）で表した車両の上、前、右方向の単位ベクトル */
 export interface Calibration {
   gravity: Vec3;
   up: Vec3;
@@ -35,8 +35,10 @@ export function projectToHorizontal(v: Vec3, up: Vec3): Vec3 | null {
   return normalize(sub(v, scale(up, dot(v, up))));
 }
 
-// 走行中に推定した前方（forward）が無いときは、画面が運転者を向いている前提で画面の法線の逆向きを前とする
-// 端末がほぼ水平に置かれている場合は端末上端方向を前とみなす
+/**
+ * 走行中に推定した前方（forward）が無いときは、画面が運転者を向いている前提で画面の法線の逆向きを前とする
+ * 端末がほぼ水平に置かれている場合は端末上端方向を前とみなす
+ */
 export function createCalibration(gravity: Vec3, estimatedForward: Vec3 | null = null): Calibration | null {
   if (Math.abs(length(gravity) - STANDARD_GRAVITY) > 3) return null;
   const up = normalize(gravity);
@@ -82,7 +84,7 @@ export class GravityAverager {
   }
 }
 
-// 表示用の一次ローパス
+/** 表示用の一次ローパス */
 export class GForceLowPass {
   private value: GForce | null = null;
   private lastT = 0;

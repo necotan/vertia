@@ -2,7 +2,7 @@ import type { GpsPoint } from "@/lib/db/schema";
 import { GPS_ACCURACY_LIMIT_M, resolveSpeed } from "./liveStats";
 
 export interface SpeedSample {
-  // 記録開始からの経過時間（秒）
+  /** 記録開始からの経過時間（秒） */
   t: number;
   mps: number;
 }
