@@ -117,32 +117,39 @@ git config core.hooksPath .githooks
 
 ### Directory Structure
 
-```
-app/                  Pages (App Router), manifest, icons
-components/
-  drive/              Drive screen
-  home/               Home
-  sessions/           Recording list, details, map, speed chart
-  map/                Map
-  settings/           Settings
-  layout/             Bottom nav, providers
-  pwa/                Service Worker registration
-  ui/                 Buttons, confirmation dialog
-lib/
-  db/                 IndexedDB schema, saving and deleting recordings, export / import
-  drive/              Drive screen control, recording, stats, G calculation
-  drive/renderer/     Canvas rendering
-  sensors/            Location, motion sensors, Wake Lock
-  i18n/               Language settings
-  exploredCells.ts    Computes the H3 cells passed through from a route
-  regions.ts          Finds the municipality and prefecture at the map center and computes exploration rates
-  mapLibre.ts         Loading MapLibre and shared map logic
-  fonts.ts            Font definitions
-  format.ts           Elapsed time formatting
-  geo.ts              Distance between two points, m/s to km/h conversion
-messages/             Translations (ja.json / en.json)
-scripts/              Icon and boundary data generation, MapLibre Worker copy, route check
-public/               Service Worker, PWA icons, municipality and prefecture boundaries (boundaries/)
+```text
+/
+├── app/                    # Routes (home, drive, sessions, sessions/detail, sessions/share, map, settings), manifest, icons
+├── components/
+│   ├── drive/              # DriveScreen
+│   ├── home/               # HomeScreen, HomeStats
+│   ├── sessions/           # SessionsScreen, SessionDetailScreen, SessionMap, SpeedChart, ShareCardScreen, etc.
+│   ├── map/                # ExploredMapScreen
+│   ├── settings/           # SettingsScreen
+│   ├── layout/             # AppShell, BottomNav, AppProviders
+│   ├── pwa/                # ServiceWorkerRegister
+│   └── ui/                 # Button, Dialog, ConfirmDialog, BottomSheet, Toast, etc.
+├── lib/                    # exploredCells.ts, regions.ts, mapLibre.ts, routeSpeed.ts, geo.ts, format.ts, units.ts, etc.
+│   ├── db/                 # IndexedDB schema, saving and deleting recordings, export / import
+│   ├── drive/              # Drive screen control, recording, stats, G calculation
+│   │   └── renderer/       # Canvas rendering of the drive screen
+│   ├── sensors/            # Location, motion sensors, Wake Lock
+│   ├── shareCard/          # Share card image layout and drawing
+│   ├── weather/            # Weather during recording (Open-Meteo)
+│   ├── hooks/              # useDeferredLoading, useDimmedPageBackground
+│   └── i18n/               # Language settings
+├── messages/               # Translations (ja.json / en.json)
+├── scripts/                # generateIcons, generateBoundaries, copyMaplibreWorker, checkRoutes
+├── assets/                 # Source image for icons (vertia-icon.png)
+├── public/
+│   ├── sw.js               # Service Worker
+│   ├── icons/              # PWA icons
+│   ├── boundaries/         # Municipality, ward, and prefecture boundaries (generated)
+│   └── maplibre/           # MapLibre Worker (copied at dev / build, git-ignored)
+├── docs/                   # Specs (requirements.md, data-model.md)
+├── .githooks/              # pre-commit, commit-msg
+├── next.config.ts
+└── package.json
 ```
 
 ### About the MapLibre Worker

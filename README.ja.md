@@ -117,32 +117,39 @@ git config core.hooksPath .githooks
 
 ### ディレクトリ構成
 
-```
-app/                  ページ（App Router）、manifest、アイコン
-components/
-  drive/              走行画面
-  home/               ホーム
-  sessions/           記録一覧・詳細・地図・速度グラフ
-  map/                マップ
-  settings/           設定
-  layout/             下部ナビ、Provider
-  pwa/                Service Worker の登録
-  ui/                 ボタン、確認ダイアログ
-lib/
-  db/                 IndexedDB のスキーマ、記録の保存・削除、エクスポート / インポート
-  drive/              走行画面の制御、記録、集計、G の計算
-  drive/renderer/     Canvas の描画
-  sensors/            位置情報、モーションセンサー、Wake Lock
-  i18n/               言語設定
-  exploredCells.ts    走行ルートから通った H3 セルを計算
-  regions.ts          地図の中央の市区町村・都道府県の検索と探索率の計算
-  mapLibre.ts         MapLibre の読み込みと地図の共通処理
-  fonts.ts            フォントの定義
-  format.ts           経過時間の表示フォーマット
-  geo.ts              2 点間の距離計算、m/s から km/h 変換
-messages/             翻訳（ja.json / en.json）
-scripts/              アイコン・境界データの生成、MapLibre の Worker のコピー、ルートの検査
-public/               Service Worker、PWA 用アイコン、市区町村・都道府県の境界（boundaries/）
+```text
+/
+├── app/                    # ルーティング（ホーム, drive, sessions, sessions/detail, sessions/share, map, settings）、manifest、アイコン
+├── components/
+│   ├── drive/              # DriveScreen
+│   ├── home/               # HomeScreen, HomeStats
+│   ├── sessions/           # SessionsScreen, SessionDetailScreen, SessionMap, SpeedChart, ShareCardScreen など
+│   ├── map/                # ExploredMapScreen
+│   ├── settings/           # SettingsScreen
+│   ├── layout/             # AppShell, BottomNav, AppProviders
+│   ├── pwa/                # ServiceWorkerRegister
+│   └── ui/                 # Button, Dialog, ConfirmDialog, BottomSheet, Toast など
+├── lib/                    # exploredCells.ts, regions.ts, mapLibre.ts, routeSpeed.ts, geo.ts, format.ts, units.ts など
+│   ├── db/                 # IndexedDB のスキーマ、記録の保存・削除、エクスポート / インポート
+│   ├── drive/              # 走行画面の制御、記録、集計、G の計算
+│   │   └── renderer/       # 走行画面の Canvas 描画
+│   ├── sensors/            # 位置情報、モーションセンサー、Wake Lock
+│   ├── shareCard/          # 共有カード画像のレイアウトと描画
+│   ├── weather/            # 記録中の天気（Open-Meteo）
+│   ├── hooks/              # useDeferredLoading, useDimmedPageBackground
+│   └── i18n/               # 言語設定
+├── messages/               # 翻訳（ja.json / en.json）
+├── scripts/                # generateIcons, generateBoundaries, copyMaplibreWorker, checkRoutes
+├── assets/                 # アイコンの元画像（vertia-icon.png）
+├── public/
+│   ├── sw.js               # Service Worker
+│   ├── icons/              # PWA 用アイコン
+│   ├── boundaries/         # 市区町村・区・都道府県の境界（生成物）
+│   └── maplibre/           # MapLibre の Worker（dev / build 時にコピー、git 管理外）
+├── docs/                   # 仕様（requirements.md, data-model.md）
+├── .githooks/              # pre-commit, commit-msg
+├── next.config.ts
+└── package.json
 ```
 
 ### MapLibre の Worker について
