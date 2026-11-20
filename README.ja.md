@@ -35,7 +35,7 @@
 
 記録は手動で開始・終了します。GPS は端末が返すおおむね 1Hz、加速度と角速度は 50〜60Hz のまま間引かずに保存します。記録中にアプリが終了しても、次に開いたときに保存済みのデータから集計し直して復旧します。
 
-走り終えたら、記録ごとに走行ルートの地図と速度の推移グラフを描画します。距離・時間・速度・G の集計も同じ画面に出ます。記録 1 件を gzip 圧縮した JSON（`vertia-YYYYMMDD-HHmm.json.gz`）にエクスポートすることで、別の端末にインポートできます。
+走り終えたら、記録ごとに走行ルートの地図と速度の推移グラフを描画します。距離・時間・速度・G の集計と、記録開始時の天気も同じ画面に出ます。記録 1 件を gzip 圧縮した JSON（`vertia-YYYYMMDD-HHmm.json.gz`）にエクスポートすることで、別の端末にインポートできます。
 
 マップ画面では、これまでに記録したすべての走行で通った場所を、六角形のエリア（H3）で地図に塗って表示します。
 
@@ -182,6 +182,7 @@ npm run generate:boundaries -- path/to/N03-20250101.shp path/to/KEN_ALL_ROME.CSV
 - **Map**: [MapLibre GL JS](https://maplibre.org/) / [OpenFreeMap](https://openfreemap.org/)
 - **Hexagonal Grid**: [h3-js](https://github.com/uber/h3-js) (Licensed under Apache-2.0)
 - **Charts**: [Recharts](https://recharts.org/)
+- **Weather**: [Open-Meteo](https://open-meteo.com/)
 - **i18n & Theme**: [next-intl](https://next-intl.dev/) / [next-themes](https://github.com/pacocoursey/next-themes)
 - **Icons**: [Lucide React](https://lucide.dev/) (Licensed under ISC)
 - **Hosting**: [Vercel](https://vercel.com/)
@@ -189,6 +190,8 @@ npm run generate:boundaries -- path/to/N03-20250101.shp path/to/KEN_ALL_ROME.CSV
 地図データは © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors、タイルは OpenFreeMap / [OpenMapTiles](https://openmaptiles.org/) を利用しています。地図上にも出典を表示しています。
 
 市区町村・都道府県の境界は「[国土数値情報（行政区域データ）](https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-2025.html)」（国土交通省、CC BY 4.0）を加工して作成しています。簡略化には [mapshaper](https://github.com/mbloch/mapshaper) を使っています。英語名は日本郵便の郵便番号データ（ローマ字）をもとにしています。
+
+天気データは [Open-Meteo.com](https://open-meteo.com/)（CC BY 4.0）を利用しています。
 
 ## 免責事項
 
@@ -199,7 +202,12 @@ npm run generate:boundaries -- path/to/N03-20250101.shp path/to/KEN_ALL_ROME.CSV
 速度・G・距離などの表示値は、スマートフォンの GPS とセンサーから算出した参考値です。端末の性能、電波状況、固定方法によって誤差が出ます。車両のスピードメーターや計測機器の代わりには使わないでください。
 
 **3. データの取り扱いとプライバシー**
-走行ログ（位置情報を含む）は端末内の IndexedDB にのみ保存し、開発者のサーバーへは送信しません。ただし地図を表示するとき、ブラウザは表示範囲の地図タイルを OpenFreeMap から取得します。エクスポートしたファイルには走行ルートの位置情報が含まれるため、共有する際はご注意ください。
+走行ログ（位置情報を含む）は端末内の IndexedDB にのみ保存し、開発者のサーバーへは送信しません。ただし、次の 2 つの外部サービスとは通信します。
+
+- **OpenFreeMap**: 地図を表示するとき、ブラウザが表示範囲の地図タイルを取得します。
+- **Open-Meteo**: 走行画面で計測している間、現在の天気を取得します。送るのは小数第 2 位に丸めた座標（約 1km）だけです。
+
+記録そのもの（GPS の点やセンサーのデータ）は送信しません。エクスポートしたファイルには走行ルートの位置情報が含まれるため、共有する際はご注意ください。
 
 **4. データの損失について**
 本ソフトウェアは個人開発による成果物です。ブラウザのサイトデータの削除、端末の変更、予期せぬ不具合などにより、記録が消える可能性があります。残したい記録はエクスポート機能でバックアップを取ってください。
