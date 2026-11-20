@@ -16,6 +16,11 @@ export type ShareCardContent = {
   weather: string | null;
   place: string | null;
   rows: ShareCardCell[][];
+  /**
+   * 右下に添える出典
+   * Open-Meteo の天気を描くときは CC BY 4.0 のため必ず渡す
+   */
+  credit: string | null;
 };
 
 export type Rect = { x: number; y: number; w: number; h: number };
@@ -75,6 +80,8 @@ const HEADER_ROWS_GAP = 2.4;
 const ROW_GAP = 1.8;
 const CELL_PADDING = 2.2;
 const DIVIDER_WIDTH = 0.2;
+// 出典は余白（MARGIN）の中に描き、ブロックをどこに置いても重ならないようにする
+const CREDIT_SIZE = 1.6;
 const LINE_HEIGHT = 1.25;
 const BASELINE = 0.95;
 
@@ -464,6 +471,20 @@ export function layoutShareCard(
     }
     if (route && routeOrigin) place("route", route, routeOrigin.x, routeOrigin.y);
     if (info && infoOrigin) place("info", info, infoOrigin.x, infoOrigin.y);
+  }
+
+  if (content.credit) {
+    const size = CREDIT_SIZE * u;
+    const font = labelFont(500, size);
+    ops.push({
+      kind: "text",
+      text: content.credit,
+      x: width - margin - measure(ctx, content.credit, font),
+      // 下の余白の上下中央に文字の中心が来るよう、ベースラインを文字の高さの半分ほど下げる
+      y: height - margin / 2 + size * 0.35,
+      font,
+      alpha: 0.8,
+    });
   }
 
   return { rects, ops, unit: u, margin };

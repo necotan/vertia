@@ -312,6 +312,7 @@ export function ShareCardScreen() {
           : null,
       place: show("place") && placeValue.trim() !== "" ? placeValue.trim() : null,
       rows,
+      credit: weather && show("weather") ? t("weatherAttribution") : null,
     };
   }, [
     session,
@@ -334,6 +335,7 @@ export function ShareCardScreen() {
         content.date,
         content.weather,
         content.place,
+        content.credit,
         content.routeLabels?.start,
         content.routeLabels?.end,
         ...content.rows.flat().flatMap((cell) => [cell.label, cell.value, cell.unit]),

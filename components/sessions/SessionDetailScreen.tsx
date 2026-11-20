@@ -4,7 +4,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { ImagePlus, Share, Trash2 } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { BackLink } from "@/components/ui/BackLink";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { IconButton } from "@/components/ui/IconButton";
@@ -31,10 +31,13 @@ import { SpeedChart } from "./SpeedChart";
 
 type StatItem = { label: string; value: string; unit?: string; text?: boolean };
 
-function StatSection({ title, items }: { title: string; items: StatItem[] }) {
+function StatSection({ title, items, headerEnd }: { title: string; items: StatItem[]; headerEnd?: ReactNode }) {
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="text-sm font-semibold text-muted-foreground">{title}</h2>
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 className="text-sm font-semibold text-muted-foreground">{title}</h2>
+        {headerEnd}
+      </div>
       <dl className="grid grid-flow-col grid-cols-3 grid-rows-[auto_auto] gap-x-2 gap-y-1 rounded-2xl bg-card p-4">
         {items.map((item) => (
           <div key={item.label} className="contents">
@@ -78,6 +81,23 @@ function WeatherSection({ weather }: { weather: SessionWeather }) {
           unit: tUnits(windSpeedUnitOf[unit]),
         },
       ]}
+      // Open-Meteo のライセンスで、データを表示する場所の隣に出典のリンクが求められている
+      headerEnd={
+        <p className="text-xs text-muted-foreground">
+          {t.rich("attribution", {
+            link: (chunks) => (
+              <a
+                href="https://open-meteo.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2"
+              >
+                {chunks}
+              </a>
+            ),
+          })}
+        </p>
+      }
     />
   );
 }

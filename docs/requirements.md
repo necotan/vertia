@@ -157,6 +157,7 @@ The bottom navigation (`nav.home`, `nav.sessions`, `nav.map`, `nav.settings`) is
 - Speed chart: built from GPS points with accuracy of 50 m or better, averaged down to at most 600 points.
 - Weather: the weather, temperature, and wind speed at the start of recording (shown only when the session has weather).
   - Weather is shown only on the session detail screen. It is not shown on the drive screen or on session cards.
+  - The attribution `weather.attribution` (linked to Open-Meteo.com) is shown at the right end of the weather heading row, because Open-Meteo's licence requires a link next to where its data (CC BY 4.0) is displayed.
 - Summary:
   - Overview: distance, duration
   - Speed: average, median, max
@@ -227,7 +228,7 @@ Makes an image for sharing a session: the user picks a photo, and the route and 
   | `route` | on | GPS points with accuracy of 50 m or better (same filter as the map route), drawn as a line. Start: filled dot; end: ring with a dot; the line is not drawn inside the ring. Labels (`sessions.share.endpoints.*`: START, GOAL) are placed next to the dots, on the side (of 8 directions) that overlaps the line least and does not overlap the other dot or label; the block grows to include them. `sessions.share.rows.routeLabels` (a checkbox below show/hide, on by default) turns the labels on or off. Unavailable with fewer than 2 such points |
   | `date` | on | Start date and time |
   | `place` | on | Prefecture and municipality of the last route point (the destination; the first point when the last is not found), found with the map screen's boundary data (7.6); the prefecture is taken from the first 2 digits of the municipality code. In designated cities the ward is shown too (a ward code with its last digit set to 0 is the city code). In English, a municipality with the same name as its prefecture gets its type (`sessions.share.municipalityKinds.*`: Nagano City, Nagano). Formats: `sessions.share.placeName` (静岡県沼津市, Numazu, Shizuoka), or `placeNameWard` with `placeWard` (静岡県静岡市葵区, Aoi, Shizuoka City). When the ward is not found, the city is shown. The detected name fills a text field (`sessions.share.rows.place`, at most 40 characters) shown while `place` is checked; the user can edit it, and `sessions.share.placeReset` returns to the detected name. The edited name is not saved. When nothing is detected (outside Japan, or offline without a cached copy of the boundaries) the field starts empty; an empty field draws no place |
-  | `weather` | off | Weather and temperature at the start (`sessions.share.weatherValue`), small, next to the date. Unavailable for sessions without weather |
+  | `weather` | off | Weather and temperature at the start (`sessions.share.weatherValue`), small, next to the date. While it is drawn, the attribution `sessions.share.weatherAttribution` is also drawn small at the bottom right, inside the margin so no block overlaps it (Open-Meteo data is CC BY 4.0). Unavailable for sessions without weather |
   | `distance`, `duration` | on | From the summary |
   | `speed` | on | Average and max speed |
   | `gForce` | off | Max, max lateral, and max longitudinal G, each labeled with G (`sessions.share.labels.*`) |
