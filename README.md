@@ -35,7 +35,7 @@ The drive screen centers on a speed readout and a circular G meter, alongside av
 
 You start and stop recording manually. GPS is saved at the rate the device reports (about 1Hz), and acceleration and angular velocity at 50-60Hz without downsampling. If the app is closed during a recording, it recovers the next time you open it by recomputing the stats from the saved data.
 
-After a drive, each recording shows a map of the route and a chart of speed over time. Distance, duration, speed, and G stats appear on the same screen. You can export a recording as gzip-compressed JSON (`vertia-YYYYMMDD-HHmm.json.gz`) and import it on another device.
+After a drive, each recording shows a map of the route and a chart of speed over time. Distance, duration, speed, and G stats, along with the weather when recording started, appear on the same screen. You can export a recording as gzip-compressed JSON (`vertia-YYYYMMDD-HHmm.json.gz`) and import it on another device.
 
 The map screen paints every place you have driven through across all recordings as hexagonal areas (H3).
 
@@ -117,32 +117,39 @@ git config core.hooksPath .githooks
 
 ### Directory Structure
 
-```
-app/                  Pages (App Router), manifest, icons
-components/
-  drive/              Drive screen
-  home/               Home
-  sessions/           Recording list, details, map, speed chart
-  map/                Map
-  settings/           Settings
-  layout/             Bottom nav, providers
-  pwa/                Service Worker registration
-  ui/                 Buttons, confirmation dialog
-lib/
-  db/                 IndexedDB schema, saving and deleting recordings, export / import
-  drive/              Drive screen control, recording, stats, G calculation
-  drive/renderer/     Canvas rendering
-  sensors/            Location, motion sensors, Wake Lock
-  i18n/               Language settings
-  exploredCells.ts    Computes the H3 cells passed through from a route
-  regions.ts          Finds the municipality and prefecture at the map center and computes exploration rates
-  mapLibre.ts         Loading MapLibre and shared map logic
-  fonts.ts            Font definitions
-  format.ts           Elapsed time formatting
-  geo.ts              Distance between two points, m/s to km/h conversion
-messages/             Translations (ja.json / en.json)
-scripts/              Icon and boundary data generation, MapLibre Worker copy, route check
-public/               Service Worker, PWA icons, municipality and prefecture boundaries (boundaries/)
+```text
+/
+├── app/                    # Routes (home, drive, sessions, sessions/detail, sessions/share, map, settings), manifest, icons
+├── components/
+│   ├── drive/              # DriveScreen
+│   ├── home/               # HomeScreen, HomeStats
+│   ├── sessions/           # SessionsScreen, SessionDetailScreen, SessionMap, SpeedChart, ShareCardScreen, etc.
+│   ├── map/                # ExploredMapScreen
+│   ├── settings/           # SettingsScreen
+│   ├── layout/             # AppShell, BottomNav, AppProviders
+│   ├── pwa/                # ServiceWorkerRegister
+│   └── ui/                 # Button, Dialog, ConfirmDialog, BottomSheet, Toast, etc.
+├── lib/                    # exploredCells.ts, regions.ts, mapLibre.ts, routeSpeed.ts, geo.ts, format.ts, units.ts, etc.
+│   ├── db/                 # IndexedDB schema, saving and deleting recordings, export / import
+│   ├── drive/              # Drive screen control, recording, stats, G calculation
+│   │   └── renderer/       # Canvas rendering of the drive screen
+│   ├── sensors/            # Location, motion sensors, Wake Lock
+│   ├── shareCard/          # Share card image layout and drawing
+│   ├── weather/            # Weather during recording (Open-Meteo)
+│   ├── hooks/              # useDeferredLoading, useDimmedPageBackground
+│   └── i18n/               # Language settings
+├── messages/               # Translations (ja.json / en.json)
+├── scripts/                # generateIcons, generateBoundaries, copyMaplibreWorker, checkRoutes
+├── assets/                 # Source image for icons (vertia-icon.png)
+├── public/
+│   ├── sw.js               # Service Worker
+│   ├── icons/              # PWA icons
+│   ├── boundaries/         # Municipality, ward, and prefecture boundaries (generated)
+│   └── maplibre/           # MapLibre Worker (copied at dev / build, git-ignored)
+├── docs/                   # Specs (requirements.md, data-model.md)
+├── .githooks/              # pre-commit, commit-msg
+├── next.config.ts
+└── package.json
 ```
 
 ### About the MapLibre Worker
@@ -175,6 +182,7 @@ This project uses the following technologies and open-source libraries.
 - **Map**: [MapLibre GL JS](https://maplibre.org/) / [OpenFreeMap](https://openfreemap.org/)
 - **Hexagonal Grid**: [h3-js](https://github.com/uber/h3-js) (Licensed under Apache-2.0)
 - **Charts**: [Recharts](https://recharts.org/)
+- **Weather**: [Open-Meteo](https://open-meteo.com/)
 - **i18n & Theme**: [next-intl](https://next-intl.dev/) / [next-themes](https://github.com/pacocoursey/next-themes)
 - **Icons**: [Lucide React](https://lucide.dev/) (Licensed under ISC)
 - **Hosting**: [Vercel](https://vercel.com/)
@@ -182,6 +190,8 @@ This project uses the following technologies and open-source libraries.
 Map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, tiles by OpenFreeMap / [OpenMapTiles](https://openmaptiles.org/). Attribution is also shown on the map.
 
 The municipality and prefecture boundaries are created by processing the "[National Land Numerical Information (Administrative Area Data)](https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-2025.html)" (Ministry of Land, Infrastructure, Transport and Tourism, CC BY 4.0). They are simplified with [mapshaper](https://github.com/mbloch/mapshaper). English names are based on Japan Post's postal code data (romanized).
+
+Weather data by [Open-Meteo.com](https://open-meteo.com/) (CC BY 4.0).
 
 ## Disclaimer
 
@@ -192,7 +202,12 @@ Drivers must not watch or operate the screen while driving. Start and stop recor
 Displayed values such as speed, G-force, and distance are estimates calculated from the smartphone's GPS and sensors. They contain errors that depend on device performance, signal conditions, and how the device is mounted. Do not use them in place of the vehicle's speedometer or measuring instruments.
 
 **3. Data Handling and Privacy**
-Drive logs (including location data) are stored only in the device's IndexedDB and are not sent to the developer's servers. However, when displaying a map, the browser fetches map tiles for the visible area from OpenFreeMap. Exported files contain the location data of your routes, so be careful when sharing them.
+Drive logs (including location data) are stored only in the device's IndexedDB and are not sent to the developer's servers. However, the app communicates with the following two external services.
+
+- **OpenFreeMap**: When displaying a map, the browser fetches map tiles for the visible area.
+- **Open-Meteo**: While the drive screen is measuring, the app fetches the current weather. Only coordinates rounded to 2 decimal places (about 1 km) are sent.
+
+Recordings themselves (GPS points and sensor data) are never sent. Exported files contain the location data of your routes, so be careful when sharing them.
 
 **4. Data Loss**
 This software is a personal project. Recordings may be lost if browser site data is cleared, if you change devices, or due to unexpected bugs. Back up recordings you want to keep with the export feature.

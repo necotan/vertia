@@ -165,6 +165,7 @@
         "ward": "{name} Ward"
       },
       "weatherValue": "{condition} {temperature}{unit}",
+      "weatherAttribution": "Weather data by Open-Meteo.com",
       "scaleValue": "{scale}x",
       "actions": {
         "share": "Share",
@@ -270,6 +271,7 @@
     "condition": "Condition",
     "temperature": "Temperature",
     "wind": "Wind",
+    "attribution": "Weather data by <link>Open-Meteo.com</link>",
     "codes": {
       "clear": "Clear sky",
       "mainlyClear": "Mainly clear",
